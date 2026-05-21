@@ -1,0 +1,98 @@
+<view class="container">
+  <!-- 上传区域 -->
+  <view class="card upload-card">
+    <view class="section-title">上传战报截图</view>
+    
+    <view class="upload-area" bindtap="chooseImage">
+      <image wx:if="{{tempFilePath}}" src="{{tempFilePath}}" mode="aspectFit" class="preview-image"></image>
+      <view wx:else class="upload-placeholder">
+        <text class="icon">+</text>
+        <text class="hint">点击上传战报截图</text>
+        <text class="sub-hint">支持 JPG, PNG 格式</text>
+      </view>
+    </view>
+    
+    <view class="form-item">
+      <text class="label">赛季</text>
+      <input class="input" placeholder="例如: S1, 2024-C1" value="{{season}}" bindinput="onSeasonInput" />
+    </view>
+    
+    <button class="btn btn-primary" bindtap="uploadScreenshot" disabled="{{!tempFilePath || uploading}}">
+      {{uploading ? '识别中...' : '上传并识别'}}
+    </button>
+  </view>
+  
+  <!-- OCR 结果 -->
+  <view wx:if="{{ocrResult}}" class="card result-card">
+    <view class="result-header">
+      <text class="section-title">识别结果</text>
+      <text class="confidence">置信度: {{ocrResult.confidence}}%</text>
+    </view>
+    
+    <view class="result-item">
+      <text class="item-label">识别到的武将:</text>
+      <view class="heroes-list">
+        <text wx:for="{{ocrResult.suggested.heroes}}" wx:key="index" 
+              class="tag tag-primary">{{item}}</text>
+        <text wx:if="{{ocrResult.suggested.heroes.length === 0}}" class="no-data">未识别到武将</text>
+      </view>
+    </view>
+    
+    <view class="result-item">
+      <text class="item-label">原始文本:</text>
+      <text class="raw-text">{{ocrResult.raw_ocr_text || '无'}}</text>
+    </view>
+    
+    <view class="divider"></view>
+    
+    <!-- 确认表单 -->
+    <view class="confirm-form">
+      <view class="form-item">
+        <text class="label">玩家名 *</text>
+        <input class="input" placeholder="输入玩家名" value="{{playerName}}" bindinput="onPlayerNameInput" />
+      </view>
+      
+      <view class="form-row">
+        <view class="form-item half">
+          <text class="label">同盟</text>
+          <input class="input" placeholder="同盟名" value="{{alliance}}" bindinput="onAllianceInput" />
+        </view>
+        <view class="form-item half">
+          <text class="label">区服</text>
+          <input class="input" placeholder="区服" value="{{server}}" bindinput="onServerInput" />
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <text class="label">队伍武将</text>
+        <view class="heroes-input">
+          <input wx:for="{{3}}" wx:key="index" class="input hero-input" 
+                 placeholder="武将{{index + 1}}" value="{{heroes[index]}}" 
+                 bindinput="onHeroInput" data-index="{{index}}" />
+        </view>
+      </view>
+      
+      <view class="form-row">
+        <view class="form-item half">
+          <text class="label">敌方位置</text>
+          <picker bindchange="onEnemySideChange" value="{{enemySideIndex}}" range="{{enemySideOptions}}">
+            <view class="input picker-value">{{enemySideOptions[enemySideIndex]}}</view>
+          </picker>
+        </view>
+        <view class="form-item half">
+          <text class="label">战报结果</text>
+          <picker bindchange="onBattleResultChange" value="{{battleResultIndex}}" range="{{battleResultOptions}}">
+            <view class="input picker-value">{{battleResultOptions[battleResultIndex]}}</view>
+          </picker>
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <text class="label">备注</text>
+        <textarea class="input textarea" placeholder="备注信息" value="{{notes}}" bindinput="onNotesInput"></textarea>
+      </view>
+      
+      <button class="btn btn-success" bindtap="confirmIntel">确认保存</button>
+    </view>
+  </view>
+</view>

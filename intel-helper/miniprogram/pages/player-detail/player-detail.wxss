@@ -1,0 +1,281 @@
+.player-info-card {
+  padding: 30rpx;
+}
+
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 30rpx;
+  margin-bottom: 30rpx;
+}
+
+.player-avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-text {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #fff;
+}
+
+.player-details {
+  flex: 1;
+}
+
+.player-name {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 15rpx;
+}
+
+.player-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15rpx;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 30rpx;
+  border-top: 2rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #e94560;
+}
+
+.stat-label {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  margin-top: 8rpx;
+}
+
+/* 队伍列表 */
+.teams-section {
+  margin-top: 20rpx;
+}
+
+.team-card {
+  padding: 25rpx;
+  margin-bottom: 20rpx;
+}
+
+.team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20rpx;
+}
+
+.team-heroes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  flex: 1;
+}
+
+.hero-chip {
+  padding: 10rpx 20rpx;
+  border-radius: 30rpx;
+  color: #fff;
+  font-size: 26rpx;
+}
+
+.team-result {
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  background: rgba(255, 255, 255, 0.1);
+  color: #666;
+}
+
+.team-result.win {
+  background: rgba(78, 205, 196, 0.2);
+  color: #4ecdc4;
+}
+
+.team-result.loss {
+  background: rgba(233, 69, 96, 0.2);
+  color: #e94560;
+}
+
+.team-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.team-time {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.team-name {
+  font-size: 24rpx;
+  color: #a0a0a0;
+}
+
+.btn-counter {
+  width: 100%;
+  padding: 18rpx;
+  background: transparent;
+  border: 2rpx solid #4ecdc4;
+  color: #4ecdc4;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+}
+
+/* 克制分析弹窗 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  width: 90%;
+  max-height: 85vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 2rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #fff;
+}
+
+.modal-close {
+  font-size: 50rpx;
+  color: #666;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 30rpx;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.enemy-section {
+  margin-bottom: 30rpx;
+}
+
+.enemy-title, .counter-title {
+  font-size: 28rpx;
+  color: #a0a0a0;
+  margin-bottom: 15rpx;
+}
+
+.enemy-heroes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15rpx;
+  margin-bottom: 20rpx;
+}
+
+.enemy-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15rpx;
+}
+
+.enemy-type, .tags-label {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.highlight {
+  color: #e94560;
+  font-weight: bold;
+}
+
+.counter-section {
+  border-top: 2rpx solid rgba(255, 255, 255, 0.1);
+  padding-top: 30rpx;
+}
+
+.counter-item {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16rpx;
+  padding: 25rpx;
+  margin-bottom: 20rpx;
+}
+
+.counter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.counter-type {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #4ecdc4;
+}
+
+.counter-score {
+  font-size: 28rpx;
+  color: #ffc107;
+  background: rgba(255, 193, 7, 0.2);
+  padding: 6rpx 16rpx;
+  border-radius: 16rpx;
+}
+
+.counter-reason {
+  display: block;
+  font-size: 26rpx;
+  color: #ccc;
+  line-height: 1.6;
+  margin-bottom: 15rpx;
+}
+
+.suggested-heroes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.suggested-label {
+  font-size: 24rpx;
+  color: #666;
+}

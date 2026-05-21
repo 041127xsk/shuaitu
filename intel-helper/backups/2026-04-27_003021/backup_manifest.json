@@ -1,0 +1,22 @@
+{
+  "backup_time": "2026-04-27T00:30:21.738520",
+  "backup_directory": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\backups\\2026-04-27_003021",
+  "source_data_directory": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\data",
+  "total_files": 1,
+  "failed_files": 0,
+  "total_size_bytes": 118784,
+  "total_size_formatted": "0.11 MB",
+  "files": [
+    {
+      "source": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\data\\intel.db",
+      "destination": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\backups\\2026-04-27_003021\\intel.db",
+      "size_bytes": 118784,
+      "success": true,
+      "error": null
+    }
+  ],
+  "logs_backup": {
+    "count": 0,
+    "directory": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\backups\\2026-04-27_003021\\logs"
+  }
+}

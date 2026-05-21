@@ -1,0 +1,44 @@
+<view class="container">
+  <!-- 搜索区域 -->
+  <view class="card search-card">
+    <view class="search-box">
+      <input class="input search-input" placeholder="输入玩家名搜索" 
+             value="{{searchKey}}" bindinput="onSearchInput" bindconfirm="searchPlayers" />
+      <picker class="season-picker" bindchange="onSeasonChange" value="{{seasonIndex}}" range="{{seasonList}}">
+        <view class="picker-btn">{{seasonList[seasonIndex]}}</view>
+      </picker>
+    </view>
+    <button class="btn btn-primary" bindtap="searchPlayers" style="margin-top: 20rpx;">搜索</button>
+  </view>
+  
+  <!-- 搜索结果 -->
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+  
+  <view wx:elif="{{results.length > 0}}" class="results">
+    <view class="results-count">找到 {{results.length}} 个玩家</view>
+    
+    <view wx:for="{{results}}" wx:key="id" class="card player-card" bindtap="viewPlayerDetail" data-id="{{item.id}}">
+      <view class="player-header">
+        <text class="player-name">{{item.name}}</text>
+        <text class="tag tag-primary">{{item.season}}</text>
+      </view>
+      
+      <view class="player-info-row">
+        <text wx:if="{{item.alliance}}" class="info-item">同盟: {{item.alliance}}</text>
+        <text wx:if="{{item.server}}" class="info-item">区服: {{item.server}}</text>
+      </view>
+      
+      <view class="player-footer">
+        <text class="teams-count">队伍: {{item.team_count}}</text>
+        <text wx:if="{{item.latest_seen}}" class="latest-time">
+          最近: {{item.latest_seen}}
+        </text>
+      </view>
+    </view>
+  </view>
+  
+  <view wx:elif="{{searched && results.length === 0}}" class="empty-state">
+    <text class="empty-text">未找到相关玩家</text>
+    <text class="empty-hint">尝试其他关键词或赛季</text>
+  </view>
+</view>

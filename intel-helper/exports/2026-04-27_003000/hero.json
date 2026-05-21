@@ -1,0 +1,2805 @@
+[
+  {
+    "id": 1,
+    "name": "曹操",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 85,
+    "defense": 90,
+    "speed": 72,
+    "tags": [
+      "辅助",
+      "buff",
+      "全队"
+    ],
+    "skill_name": "魏武之世",
+    "skill_images": [
+      "/hero_skill_images/曹操_235437-srpngw7bu0.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 2,
+    "name": "司马懿",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 82,
+    "defense": 75,
+    "speed": 70,
+    "tags": [
+      "谋略",
+      "爆发",
+      "持续"
+    ],
+    "skill_name": "破凰",
+    "skill_images": [
+      "/hero_skill_images/司马懿_110157-7ea05fusq2.png",
+      "/hero_skill_images/司马懿_110233-e26g4aszty.png",
+      "/hero_skill_images/司马懿_110247-l51jbw4gos.png",
+      "/hero_skill_images/司马懿_110302-0emadstkpf.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 3,
+    "name": "张辽",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 95,
+    "defense": 70,
+    "speed": 95,
+    "tags": [
+      "物理",
+      "先手",
+      "骑兵"
+    ],
+    "skill_name": "神速",
+    "skill_images": [
+      "/hero_skill_images/张辽_205540-814umdsaty.png",
+      "/hero_skill_images/张绣_230647-vweqkriljb.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 4,
+    "name": "郭嘉",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 70,
+    "defense": 65,
+    "speed": 75,
+    "tags": [
+      "谋略",
+      "控制",
+      "先手"
+    ],
+    "skill_name": "鬼谋",
+    "skill_images": [
+      "/hero_skill_images/郭嘉_234811-vkhrm74uwt.png",
+      "/hero_skill_images/郭嘉_234804-wb4ldunegy.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 5,
+    "name": "荀彧",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 68,
+    "defense": 72,
+    "speed": 68,
+    "tags": [
+      "谋略",
+      "辅助",
+      "控制"
+    ],
+    "skill_name": "举贤决机",
+    "skill_images": [
+      "/hero_skill_images/荀彧_1_kol_20250106_bbb3b45d05080abb1cb28de8c0f6fe9e.jpeg",
+      "/hero_skill_images/荀彧_1_kol_20250106_ced6f41c8740014b56ff92082625aa30.jpeg",
+      "/hero_skill_images/荀彧_1_kol_20250106_94db7e96f23966ec4344c5bd6f5ebc1b.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 6,
+    "name": "贾诩",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 80,
+    "defense": 68,
+    "speed": 72,
+    "tags": [
+      "谋略",
+      "控制",
+      "持续"
+    ],
+    "skill_name": "算无遗策",
+    "skill_images": [
+      "/hero_skill_images/贾诩_102410-rgfcs7zle4.png",
+      "/hero_skill_images/贾诩_202722-kauyfg1tji.png",
+      "/hero_skill_images/贾诩_202648-4figmsb7en.png",
+      "/hero_skill_images/贾诩_202700-ke8t9my20z.png",
+      "/hero_skill_images/贾诩_202711-r9lssph32n.png",
+      "/hero_skill_images/贾诩_202722-kauyfg1tji.png",
+      "/hero_skill_images/贾诩_202700-ke8t9my20z.png",
+      "/hero_skill_images/贾诩_202752-al9yh7o5ji.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 7,
+    "name": "邓艾",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 90,
+    "defense": 72,
+    "speed": 85,
+    "tags": [
+      "物理",
+      "爆发",
+      "追击"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 8,
+    "name": "钟会",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 88,
+    "defense": 75,
+    "speed": 80,
+    "tags": [
+      "物理",
+      "控制",
+      "辅助"
+    ],
+    "skill_name": "剑关",
+    "skill_images": [
+      "/hero_skill_images/钟会_105410-v4zeoujt7s.jpeg",
+      "/hero_skill_images/钟会_121602-61jycp3nom.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 9,
+    "name": "曹仁",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 75,
+    "defense": 95,
+    "speed": 65,
+    "tags": [
+      "物理",
+      "肉盾",
+      "控制"
+    ],
+    "skill_name": "八门金锁",
+    "skill_images": [
+      "/hero_skill_images/曹仁_000330-m8dqh76gb9.png",
+      "/hero_skill_images/曹仁_000345-dzk3uvba7e.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 10,
+    "name": "徐晃",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 92,
+    "defense": 85,
+    "speed": 70,
+    "tags": [
+      "物理",
+      "爆发",
+      "减伤"
+    ],
+    "skill_name": "低配",
+    "skill_images": [
+      "/hero_skill_images/徐晃_101507-cvrd9zm58q.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 11,
+    "name": "张郃",
+    "camp": "魏",
+    "troop_type": "弓兵",
+    "attack": 88,
+    "defense": 70,
+    "speed": 82,
+    "tags": [
+      "物理",
+      "控制",
+      "弓兵"
+    ],
+    "skill_name": "兵行巧变",
+    "skill_images": [
+      "/hero_skill_images/张郃_1_kol_20241231_581a9dbba8d04e022ad2f518f1307ea0.jpeg",
+      "/hero_skill_images/张郃_1_kol_20241231_8a48b67eed0713a0f1c3146892dd86ac.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 12,
+    "name": "于禁",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": 78,
+    "defense": 92,
+    "speed": 62,
+    "tags": [
+      "物理",
+      "肉盾",
+      "减伤"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 13,
+    "name": "乐进",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 90,
+    "defense": 75,
+    "speed": 88,
+    "tags": [
+      "物理",
+      "爆发",
+      "先手"
+    ],
+    "skill_name": "奋疾先登",
+    "skill_images": [
+      "/hero_skill_images/乐进_214914-ew8qgbhk0z.jpeg",
+      "/hero_skill_images/乐进_235320-g7c8jy3k6q.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 14,
+    "name": "刘备",
+    "camp": "蜀",
+    "troop_type": "骑兵",
+    "attack": 72,
+    "defense": 80,
+    "speed": 70,
+    "tags": [
+      "治疗",
+      "辅助",
+      "生存"
+    ],
+    "skill_name": "皇裔",
+    "skill_images": [
+      "/hero_skill_images/刘备_210150-3tcg84r9sj.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 15,
+    "name": "关羽",
+    "camp": "蜀",
+    "troop_type": "骑兵",
+    "attack": 95,
+    "defense": 78,
+    "speed": 85,
+    "tags": [
+      "物理",
+      "控制",
+      "爆发"
+    ],
+    "skill_name": "樊渊泅囚",
+    "skill_images": [
+      "/hero_skill_images/关羽_114529-hoza1ysm78.png",
+      "/hero_skill_images/关羽_114539-pfbs5r0ujg.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 16,
+    "name": "张飞",
+    "camp": "蜀",
+    "troop_type": "骑兵",
+    "attack": 98,
+    "defense": 72,
+    "speed": 80,
+    "tags": [
+      "物理",
+      "爆发",
+      "群攻"
+    ],
+    "skill_name": "锐矛",
+    "skill_images": [
+      "/hero_skill_images/张飞_234141-s2gdw0anpv.png",
+      "/hero_skill_images/张飞_234621-t1cqnv3yhg.png",
+      "/hero_skill_images/张飞_234810-w4a0hpdtei.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 17,
+    "name": "赵云",
+    "camp": "蜀",
+    "troop_type": "骑兵",
+    "attack": 90,
+    "defense": 85,
+    "speed": 88,
+    "tags": [
+      "物理",
+      "生存",
+      "全能"
+    ],
+    "skill_name": "银龙冲阵",
+    "skill_images": [
+      "/hero_skill_images/赵云_225116-eb3lkgwy09.png",
+      "/hero_skill_images/赵云_194618-oab4uz9w8c.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 18,
+    "name": "诸葛亮",
+    "camp": "蜀",
+    "troop_type": "弓兵",
+    "attack": 78,
+    "defense": 75,
+    "speed": 70,
+    "tags": [
+      "谋略",
+      "控制",
+      "辅助"
+    ],
+    "skill_name": "战必",
+    "skill_images": [
+      "/hero_skill_images/诸葛亮_225232-hvn4rub158.png",
+      "/hero_skill_images/诸葛亮_002537-csngl6bj93.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 19,
+    "name": "马超",
+    "camp": "蜀",
+    "troop_type": "骑兵",
+    "attack": 98,
+    "defense": 68,
+    "speed": 95,
+    "tags": [
+      "物理",
+      "爆发",
+      "追击"
+    ],
+    "skill_name": "血溅黄砂",
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 20,
+    "name": "姜维",
+    "camp": "蜀",
+    "troop_type": "骑兵",
+    "attack": 85,
+    "defense": 78,
+    "speed": 75,
+    "tags": [
+      "谋略",
+      "辅助",
+      "控制"
+    ],
+    "skill_name": "智高性愎",
+    "skill_images": [
+      "/hero_skill_images/姜维_224928-pvf62czn0u.png",
+      "/hero_skill_images/姜维_224855-hot6ly3fp2.png",
+      "/hero_skill_images/姜维_224907-kutos7myfb.png",
+      "/hero_skill_images/姜维_224928-pvf62czn0u.png",
+      "/hero_skill_images/姜维_224949-4ijv80tysp.png",
+      "/hero_skill_images/姜维_225001-ugc1e6m45b.png",
+      "/hero_skill_images/孙权_1_kol_20251024_337823a6e8e67fc81583906d4391ceab.jpeg",
+      "/hero_skill_images/姜维_225020-sd2gjywk7m.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 21,
+    "name": "魏延",
+    "camp": "蜀",
+    "troop_type": "骑兵",
+    "attack": 92,
+    "defense": 75,
+    "speed": 82,
+    "tags": [
+      "物理",
+      "爆发",
+      "战意"
+    ],
+    "skill_name": "奇兵拒北",
+    "skill_images": [
+      "/hero_skill_images/魏延_230909-hiwsfqlbrs.jpeg",
+      "/hero_skill_images/魏延_230909-hiwsfqlbrs.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 22,
+    "name": "黄忠",
+    "camp": "蜀",
+    "troop_type": "弓兵",
+    "attack": 95,
+    "defense": 68,
+    "speed": 70,
+    "tags": [
+      "物理",
+      "弓兵",
+      "爆发"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 23,
+    "name": "法正",
+    "camp": "蜀",
+    "troop_type": "弓兵",
+    "attack": 72,
+    "defense": 70,
+    "speed": 68,
+    "tags": [
+      "谋略",
+      "辅助",
+      "治疗"
+    ],
+    "skill_name": "难知如阴",
+    "skill_images": [
+      "/hero_skill_images/法正_212326-wefm3q0lv7.png",
+      "/hero_skill_images/法正_221549-cyh6j7vuzw.png",
+      "/hero_skill_images/法正_221609-san3i4gdbs.png",
+      "/hero_skill_images/法正_221617-aihp5tj0ky.png",
+      "/hero_skill_images/法正_221636-ezvafdu4y7.png",
+      "/hero_skill_images/法正_123139-7mloat65v2.jpeg",
+      "/hero_skill_images/法正_123147-0sfjyrvki7.jpeg",
+      "/hero_skill_images/法正_123355-psdjiutzk7.jpeg",
+      "/hero_skill_images/法正_123359-7h3kenvd2w.jpeg",
+      "/hero_skill_images/法正_123402-hubi4o05sg.jpeg",
+      "/hero_skill_images/法正_123407-pnvws8o64y.jpeg",
+      "/hero_skill_images/法正_123421-j1yp8hmlwr.jpeg",
+      "/hero_skill_images/法正_123414-o5vusz7mfe.jpeg",
+      "/hero_skill_images/法正_123419-1ozg2k64sj.jpeg",
+      "/hero_skill_images/法正_123421-j1yp8hmlwr.jpeg",
+      "/hero_skill_images/法正_123424-8o5btw3v2n.jpeg",
+      "/hero_skill_images/法正_123414-o5vusz7mfe.jpeg",
+      "/hero_skill_images/法正_123430-e8hf6jcz95.jpeg",
+      "/hero_skill_images/法正_123433-n98pig5lo6.jpeg",
+      "/hero_skill_images/法正_123450-c0lgti8pr7.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 24,
+    "name": "庞统",
+    "camp": "蜀",
+    "troop_type": "骑兵",
+    "attack": 75,
+    "defense": 70,
+    "speed": 65,
+    "tags": [
+      "谋略",
+      "辅助",
+      "治疗"
+    ],
+    "skill_name": "索命连环",
+    "skill_images": [
+      "/hero_skill_images/庞统_004646-wsiumckhj9.png",
+      "/hero_skill_images/庞统_004704-1bl5qj6h8d.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 25,
+    "name": "孙权",
+    "camp": "吴",
+    "troop_type": "骑兵",
+    "attack": 80,
+    "defense": 82,
+    "speed": 75,
+    "tags": [
+      "辅助",
+      "生存",
+      "全能"
+    ],
+    "skill_name": "反计",
+    "skill_images": [
+      "/hero_skill_images/孙权_1_kol_20251024_8e21e4935836b7153678aea0ba4c2693.jpeg",
+      "/hero_skill_images/孙权_1_kol_20251024_337823a6e8e67fc81583906d4391ceab.jpeg",
+      "/hero_skill_images/孙权_1_kol_20251023_60d00c85bd15421e45a182abaabe028e.png",
+      "/hero_skill_images/孙权_1_kol_20251024_bde5469d8bda08ae3e12c3f7ce1e9540.png",
+      "/hero_skill_images/孙策_233926-iwru5j70fz.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 26,
+    "name": "周瑜",
+    "camp": "吴",
+    "troop_type": "弓兵",
+    "attack": 88,
+    "defense": 68,
+    "speed": 78,
+    "tags": [
+      "谋略",
+      "控制",
+      "群攻"
+    ],
+    "skill_name": "玄武巨流",
+    "skill_images": [
+      "/hero_skill_images/周瑜_124836-sqfj063bon.jpeg",
+      "/hero_skill_images/周瑜_124436-8yl0qt6fk1.jpeg",
+      "/hero_skill_images/周瑜_130806-n2ac3lphft.jpeg",
+      "/hero_skill_images/周瑜_115944-fahtgb2dmw.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 27,
+    "name": "陆逊",
+    "camp": "吴",
+    "troop_type": "弓兵",
+    "attack": 90,
+    "defense": 70,
+    "speed": 75,
+    "tags": [
+      "谋略",
+      "爆发",
+      "火攻"
+    ],
+    "skill_name": "火势风威",
+    "skill_images": [
+      "/hero_skill_images/阴丽华_115916-qz8km4h0fj.jpeg",
+      "/hero_skill_images/陆逊_184327-yl1r948j7q.jpeg",
+      "/hero_skill_images/陆逊_184400-rgp3sihb79.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 28,
+    "name": "吕蒙",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": 85,
+    "defense": 82,
+    "speed": 78,
+    "tags": [
+      "物理",
+      "控制",
+      "爆发"
+    ],
+    "skill_name": "白衣渡江",
+    "skill_images": [
+      "/hero_skill_images/吕蒙_180222-rvycbh4asn.png",
+      "/hero_skill_images/吕蒙_180325-ctu89dnqks.jpeg",
+      "/hero_skill_images/吕蒙_180355-6uib91vyps.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 29,
+    "name": "鲁肃",
+    "camp": "吴",
+    "troop_type": "骑兵",
+    "attack": 65,
+    "defense": 72,
+    "speed": 65,
+    "tags": [
+      "谋略",
+      "辅助",
+      "治疗"
+    ],
+    "skill_name": "同仇敌忾",
+    "skill_images": [
+      "/hero_skill_images/鲁肃_135015-4uvs9h6nso.png",
+      "/hero_skill_images/鲁肃_135023-4sql3wf8tc.png",
+      "/hero_skill_images/鲁肃_135030-pg2d3tvquh.png",
+      "/hero_skill_images/鲁肃_124557-r28ms06qwz.jpeg",
+      "/hero_skill_images/高顺_192230-mwust3qle1.jpeg",
+      "/hero_skill_images/鲁肃_135054-ovg4t5f6u9.png",
+      "/hero_skill_images/鲁肃_135122-87grb95pmw.png",
+      "/hero_skill_images/鲁肃_135131-q5thrj4g1w.png",
+      "/hero_skill_images/鲁肃_135043-mk1s0znr2a.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 30,
+    "name": "甘宁",
+    "camp": "吴",
+    "troop_type": "弓兵",
+    "attack": 95,
+    "defense": 70,
+    "speed": 85,
+    "tags": [
+      "物理",
+      "爆发",
+      "暴击"
+    ],
+    "skill_name": "侵略如火",
+    "skill_images": [
+      "/hero_skill_images/甘宁_115545-kpos5n8de0.png",
+      "/hero_skill_images/甘宁_115612-p8c79fmnb2.png",
+      "/hero_skill_images/王昭君_1_kol_20250129_47798b0d0116d773378c115a7725a977.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 31,
+    "name": "太史慈",
+    "camp": "吴",
+    "troop_type": "弓兵",
+    "attack": 92,
+    "defense": 72,
+    "speed": 88,
+    "tags": [
+      "物理",
+      "连击",
+      "弓兵"
+    ],
+    "skill_name": "方阵突击",
+    "skill_images": [
+      "/hero_skill_images/太史慈_215742-umgrdkslp9.png",
+      "/hero_skill_images/太史慈_215754-rt1vnw5lm0.png",
+      "/hero_skill_images/太史慈_215802-o2l13t7zug.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 32,
+    "name": "孙策",
+    "camp": "吴",
+    "troop_type": "骑兵",
+    "attack": 95,
+    "defense": 78,
+    "speed": 82,
+    "tags": [
+      "物理",
+      "爆发",
+      "骑兵"
+    ],
+    "skill_name": "霸王渡江",
+    "skill_images": [
+      "/hero_skill_images/孙策_233333-lryigt0hcs.png",
+      "/hero_skill_images/孙策_233909-45c1tah3kg.png",
+      "/hero_skill_images/孙策_233953-n7cr3s4hes.png",
+      "/hero_skill_images/孙策_233926-iwru5j70fz.png",
+      "/hero_skill_images/孙策_234447-i93ems2uqh.png",
+      "/hero_skill_images/孙策_233944-sc8gbdni36.png",
+      "/hero_skill_images/孙策_233953-n7cr3s4hes.png",
+      "/hero_skill_images/孙策_234447-i93ems2uqh.png",
+      "/hero_skill_images/孙策_234350-peqnyk6jci.png",
+      "/hero_skill_images/孙策_234404-ret6kh978d.png",
+      "/hero_skill_images/孙策_234413-mku45hjayv.png",
+      "/hero_skill_images/孙策_234421-49h80zn7wk.png",
+      "/hero_skill_images/孙策_234445-rv1860po39.png",
+      "/hero_skill_images/孙策_234515-8y3akpidzr.png",
+      "/hero_skill_images/孙权_1_kol_20251024_8e21e4935836b7153678aea0ba4c2693.jpeg",
+      "/hero_skill_images/孙策_234539-5si6k7pro8.png",
+      "/hero_skill_images/孙策_234555-wd9r3ajsq1.png",
+      "/hero_skill_images/孙策_234608-l6ejgkupt1.png",
+      "/hero_skill_images/孙策_234617-7gtw81df35.png",
+      "/hero_skill_images/孙策_234814-3dvme905j6.png",
+      "/hero_skill_images/孙策_234757-0scwbs729v.png",
+      "/hero_skill_images/孙策_234807-2ch94qfzb8.png",
+      "/hero_skill_images/孙策_234814-3dvme905j6.png",
+      "/hero_skill_images/孙策_234832-r4lk0sa28e.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 33,
+    "name": "周泰",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": 82,
+    "defense": 95,
+    "speed": 65,
+    "tags": [
+      "物理",
+      "保护",
+      "肉盾"
+    ],
+    "skill_name": "疮痍累身",
+    "skill_images": [
+      "/hero_skill_images/周泰_002407-9wvnkfh1ag.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 34,
+    "name": "孙坚",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": 85,
+    "defense": 92,
+    "speed": 62,
+    "tags": [
+      "物理",
+      "肉盾",
+      "反击"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 35,
+    "name": "凌统",
+    "camp": "吴",
+    "troop_type": "骑兵",
+    "attack": 88,
+    "defense": 72,
+    "speed": 92,
+    "tags": [
+      "物理",
+      "先手",
+      "辅助"
+    ],
+    "skill_name": "国士无双",
+    "skill_images": [
+      "/hero_skill_images/凌统_131310-59s7jqf1h4.png",
+      "/hero_skill_images/凌统_141636-dor23vqk7n.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 36,
+    "name": "朱桓",
+    "camp": "吴",
+    "troop_type": "骑兵",
+    "attack": 90,
+    "defense": 75,
+    "speed": 85,
+    "tags": [
+      "物理",
+      "爆发",
+      "先手"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 37,
+    "name": "丁奉",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": 85,
+    "defense": 82,
+    "speed": 75,
+    "tags": [
+      "物理",
+      "控制",
+      "辅助"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 38,
+    "name": "吕布",
+    "camp": "群",
+    "troop_type": "骑兵",
+    "attack": 98,
+    "defense": 72,
+    "speed": 88,
+    "tags": [
+      "物理",
+      "爆发",
+      "群攻"
+    ],
+    "skill_name": "金吾飞将",
+    "skill_images": [
+      "/hero_skill_images/吕布_123153-gpdn570cth.jpeg",
+      "/hero_skill_images/吕布_183530-zyb8sof2pr.jpeg",
+      "/hero_skill_images/吕布_185706-7d0fuogszv.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 39,
+    "name": "貂蝉",
+    "camp": "群",
+    "troop_type": "骑兵",
+    "attack": 75,
+    "defense": 70,
+    "speed": 80,
+    "tags": [
+      "控制",
+      "辅助",
+      "混乱"
+    ],
+    "skill_name": "闭月",
+    "skill_images": [
+      "/hero_skill_images/贾充_160641-n3bjzw6g92.png",
+      "/hero_skill_images/貂蝉_233156-t4upnleysh.png",
+      "/hero_skill_images/貂蝉_233207-p2cgdjosb7.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 40,
+    "name": "张角",
+    "camp": "群",
+    "troop_type": "骑兵",
+    "attack": 85,
+    "defense": 72,
+    "speed": 75,
+    "tags": [
+      "谋略",
+      "控制",
+      "爆发"
+    ],
+    "skill_name": "妖术",
+    "skill_images": [
+      "/hero_skill_images/张角_210806-u0njwpz6dm.png",
+      "/hero_skill_images/张角_211956-1e84qioay5.jpeg",
+      "/hero_skill_images/张角_213949-wsd8r9e1f5.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 41,
+    "name": "董卓",
+    "camp": "群",
+    "troop_type": "骑兵",
+    "attack": 85,
+    "defense": 90,
+    "speed": 62,
+    "tags": [
+      "谋略",
+      "控制",
+      "肉盾"
+    ],
+    "skill_name": "查询链接戳这",
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 42,
+    "name": "袁绍",
+    "camp": "群",
+    "troop_type": "弓兵",
+    "attack": 85,
+    "defense": 78,
+    "speed": 70,
+    "tags": [
+      "谋略",
+      "弓兵",
+      "控制"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 43,
+    "name": "公孙瓒",
+    "camp": "群",
+    "troop_type": "骑兵",
+    "attack": 82,
+    "defense": 72,
+    "speed": 88,
+    "tags": [
+      "谋略",
+      "弓兵",
+      "辅助"
+    ],
+    "skill_name": "其武将成就",
+    "skill_images": [
+      "/hero_skill_images/公孙瓒_1_kol_20250907_5795c757112ee2fb0003712cb33cc539.jpeg",
+      "/hero_skill_images/公孙瓒_1_kol_20250907_818aebdb7ac7ef02143f9095dddabf93.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 44,
+    "name": "华雄",
+    "camp": "群",
+    "troop_type": "骑兵",
+    "attack": 90,
+    "defense": 78,
+    "speed": 80,
+    "tags": [
+      "物理",
+      "爆发",
+      "骑兵"
+    ],
+    "skill_name": "将出关西",
+    "skill_images": [
+      "/hero_skill_images/华雄_1_kol_20250905_3095c2cf8bba2627f0ee200180621a3d.png",
+      "/hero_skill_images/华雄_1_kol_20250905_147d5d621a5e74a2a4e1abcef9789335.png",
+      "/hero_skill_images/华雄_1_kol_20250905_60a86dbdc6fade0190e83ddea5f30bf0.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 45,
+    "name": "李儒",
+    "camp": "群",
+    "troop_type": "弓兵",
+    "attack": 78,
+    "defense": 68,
+    "speed": 72,
+    "tags": [
+      "谋略",
+      "控制",
+      "debuff"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 46,
+    "name": "陈宫",
+    "camp": "群",
+    "troop_type": "弓兵",
+    "attack": 80,
+    "defense": 72,
+    "speed": 70,
+    "tags": [
+      "谋略",
+      "辅助",
+      "控制"
+    ],
+    "skill_name": "迟智难酬",
+    "skill_images": [
+      "/hero_skill_images/陈宫_221117-8u4edohrft.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 47,
+    "name": "孟获",
+    "camp": "群",
+    "troop_type": "骑兵",
+    "attack": 85,
+    "defense": 92,
+    "speed": 60,
+    "tags": [
+      "肉盾",
+      "反击",
+      "蛮族"
+    ],
+    "skill_name": "查询链接戳这",
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 48,
+    "name": "祝融",
+    "camp": "群",
+    "troop_type": "骑兵",
+    "attack": 82,
+    "defense": 78,
+    "speed": 75,
+    "tags": [
+      "治疗",
+      "辅助",
+      "蛮族"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 49,
+    "name": "兀突骨",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": 78,
+    "defense": 95,
+    "speed": 55,
+    "tags": [
+      "肉盾",
+      "蛮族",
+      "生存"
+    ],
+    "skill_name": "藤甲突击",
+    "skill_images": [
+      "/hero_skill_images/兀突骨_190222-bme3s2u8hv.jpeg",
+      "/hero_skill_images/兀突骨_190657-0ewssnykfr.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 50,
+    "name": "华佗",
+    "camp": "群",
+    "troop_type": "骑兵",
+    "attack": 60,
+    "defense": 68,
+    "speed": 65,
+    "tags": [
+      "治疗",
+      "辅助",
+      "解控"
+    ],
+    "skill_name": "战必",
+    "skill_images": [
+      "/hero_skill_images/华佗_205955-sl3sgb5v97.jpeg",
+      "/hero_skill_images/华佗_210057-af1tcpbr05.jpeg",
+      "/hero_skill_images/华佗_210103-84itnarj67.jpeg",
+      "/hero_skill_images/华佗_210109-wre5qz7mip.jpeg",
+      "/hero_skill_images/华佗_210114-vq4oj8r3p7.jpeg",
+      "/hero_skill_images/华佗_210118-td7igyezvc.jpeg",
+      "/hero_skill_images/华佗_210122-kja5iy8bd0.jpeg",
+      "/hero_skill_images/华佗_210125-12n5u8vh3m.jpeg",
+      "/hero_skill_images/华佗_210127-jqy98l2wmz.jpeg",
+      "/hero_skill_images/华佗_210130-7pktemsf1j.jpeg",
+      "/hero_skill_images/华佗_210135-h8y3jn7cqw.jpeg",
+      "/hero_skill_images/华佗_210146-vyf3w15hdc.jpeg",
+      "/hero_skill_images/华佗_210141-1yw5tvdaz3.jpeg",
+      "/hero_skill_images/华佗_210144-a7wnitg8os.jpeg",
+      "/hero_skill_images/华佗_210146-vyf3w15hdc.jpeg",
+      "/hero_skill_images/华佗_210149-sydusabhkc.jpeg",
+      "/hero_skill_images/华佗_210149-sydusabhkc.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 51,
+    "name": "蔡文姬",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 62,
+    "defense": 70,
+    "speed": 68,
+    "tags": [
+      "治疗",
+      "辅助",
+      "解控"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 52,
+    "name": "甄氏",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 65,
+    "defense": 75,
+    "speed": 70,
+    "tags": [
+      "辅助",
+      "buff",
+      "治疗"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 53,
+    "name": "步练师",
+    "camp": "吴",
+    "troop_type": "弓兵",
+    "attack": 68,
+    "defense": 72,
+    "speed": 72,
+    "tags": [
+      "治疗",
+      "辅助",
+      "保护"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 54,
+    "name": "张春华",
+    "camp": "魏",
+    "troop_type": "骑兵",
+    "attack": 70,
+    "defense": 72,
+    "speed": 70,
+    "tags": [
+      "治疗",
+      "辅助",
+      "控制"
+    ],
+    "skill_name": "僭越",
+    "skill_images": [
+      "/hero_skill_images/张春华_124200-ys3riaswj7.jpeg",
+      "/hero_skill_images/张春华_124255-c4euny2830.jpeg",
+      "/hero_skill_images/张春华_124259-7optcuv5ms.jpeg",
+      "/hero_skill_images/张春华_124306-hka2bfvjs8.jpeg",
+      "/hero_skill_images/张春华_124311-c9sesij38o.jpeg",
+      "/hero_skill_images/张春华_124318-pe1yk5s4au.jpeg",
+      "/hero_skill_images/张春华_124325-9s5dcaih4g.jpeg",
+      "/hero_skill_images/张春华_124330-qvol0td876.jpeg",
+      "/hero_skill_images/张春华_124333-4uaptqmkh9.jpeg",
+      "/hero_skill_images/张春华_124345-al5j9rqyod.jpeg",
+      "/hero_skill_images/张春华_124516-gf0o561eda.png",
+      "/hero_skill_images/张春华_124352-g7wqhr4ulk.jpeg",
+      "/hero_skill_images/张春华_124516-gf0o561eda.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 55,
+    "name": "王异",
+    "camp": "魏",
+    "troop_type": "弓兵",
+    "attack": 75,
+    "defense": 70,
+    "speed": 75,
+    "tags": [
+      "治疗",
+      "辅助",
+      "控制"
+    ],
+    "skill_name": "统帅值",
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 56,
+    "name": "大小乔",
+    "camp": "吴",
+    "troop_type": "弓兵",
+    "attack": 62,
+    "defense": 75,
+    "speed": 72,
+    "tags": [
+      "辅助",
+      "治疗",
+      "保护"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 57,
+    "name": "孙武",
+    "camp": "吴",
+    "troop_type": "弓兵",
+    "attack": 78,
+    "defense": 72,
+    "speed": 70,
+    "tags": [
+      "谋略",
+      "控制",
+      "辅助"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 58,
+    "name": "严颜",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀",
+      "主动"
+    ],
+    "skill_name": "断首何怒",
+    "skill_images": [
+      "/hero_skill_images/严颜_225720-nd8c4im7r0.jpeg",
+      "/hero_skill_images/严颜_102347-se6orjia3z.png",
+      "/hero_skill_images/严颜_101913-gmuaf3d46l.png"
+    ],
+    "skill_desc": null,
+    "skill_type": "主动",
+    "skill_trigger_rate": 45
+  },
+  {
+    "id": 59,
+    "name": "关兴＆张苞",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "将门有将",
+    "skill_images": [
+      "/hero_skill_images/关兴＆张苞_232027-m80ou27wns.png",
+      "/hero_skill_images/乐进_214914-ew8qgbhk0z.jpeg",
+      "/hero_skill_images/关兴＆张苞_170512-nei0dzjpfa.png",
+      "/hero_skill_images/关兴＆张苞_170524-4lqkf8orhs.png",
+      "/hero_skill_images/关兴＆张苞_170533-529akujf6c.png",
+      "/hero_skill_images/关兴＆张苞_192541-ec3bojrksp.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 60,
+    "name": "关银屏",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "巾帼战阵",
+    "skill_images": [
+      "/hero_skill_images/关银屏_162118-oh50nju1im.png",
+      "/hero_skill_images/关银屏_142250-hso37awi0p.png",
+      "/hero_skill_images/关银屏_162118-oh50nju1im.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 61,
+    "name": "典韦",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "雄兵破敌",
+    "skill_images": [
+      "/hero_skill_images/典韦_231121-ilzbh0j6wu.jpeg",
+      "/hero_skill_images/典韦_231135-f1w792tesq.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 62,
+    "name": "刘禅",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "赐剑长驱",
+    "skill_images": [
+      "/hero_skill_images/刘禅_110711-grsewtf2c0.jpeg",
+      "/hero_skill_images/刘禅_152643-n6py9wk7lf.png",
+      "/hero_skill_images/刘表_163632-2gql8m3v6o.png",
+      "/hero_skill_images/刘禅_152711-89mv5pdnsi.png",
+      "/hero_skill_images/刘禅_152719-6vienq1wj9.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 63,
+    "name": "刘表",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "抚民励德",
+    "skill_images": [
+      "/hero_skill_images/刘表_163632-2gql8m3v6o.png",
+      "/hero_skill_images/刘表_105614-yqpfmbdva0.jpeg",
+      "/hero_skill_images/华佗_210057-af1tcpbr05.jpeg",
+      "/hero_skill_images/刘表_164536-3tc8kf25zh.jpeg",
+      "/hero_skill_images/刘表_165353-z8ahbrm45t.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 64,
+    "name": "卞夫人",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "俭仪 蹈 和",
+    "skill_images": [
+      "/hero_skill_images/卞夫人_124556-9svptiay8o.png",
+      "/hero_skill_images/卞夫人_124722-rfzpdts16b.png",
+      "/hero_skill_images/卞夫人_124802-ekf3gdamhj.png",
+      "/hero_skill_images/卞夫人_124819-oeiuja65kr.png",
+      "/hero_skill_images/卞夫人_124848-f1034urpi6.png",
+      "/hero_skill_images/卞夫人_124901-2lchq54y81.png",
+      "/hero_skill_images/卞夫人_124912-92wcdlj1bh.png",
+      "/hero_skill_images/卞夫人_124922-hvaqyip76k.png",
+      "/hero_skill_images/卞夫人_124936-6u39n0gqk5.png",
+      "/hero_skill_images/卞夫人_124943-l372qcb49z.png",
+      "/hero_skill_images/卞夫人_124955-5agsfzlckn.png",
+      "/hero_skill_images/卞夫人_125007-hmwdqsgz1k.png",
+      "/hero_skill_images/卞夫人_125018-cyuv3iz5ft.png",
+      "/hero_skill_images/卞夫人_125028-z3r0pqnj4e.png",
+      "/hero_skill_images/卞夫人_125100-a1u23pebjw.jpeg",
+      "/hero_skill_images/卞夫人_124848-f1034urpi6.png",
+      "/hero_skill_images/卞夫人_132446-se3fc62o54.png",
+      "/hero_skill_images/卞夫人_132501-4pjv8re3ty.png",
+      "/hero_skill_images/卞夫人_132511-w9ne2m6qrg.png",
+      "/hero_skill_images/卞夫人_132519-sfzeypwg5h.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 65,
+    "name": "卢植",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "养精蓄锐",
+    "skill_images": [
+      "/hero_skill_images/卢植_184148-g4wjtsuamh.png",
+      "/hero_skill_images/卢植_184202-s4sfg06z57.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 66,
+    "name": "卫瓘",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "持节镇西",
+    "skill_images": [
+      "/hero_skill_images/卫瓘_172343-8wyn13o04f.png",
+      "/hero_skill_images/卫瓘_111625-l6dmnh9k3q.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 67,
+    "name": "司马师",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "运筹决胜",
+    "skill_images": [
+      "/hero_skill_images/司马师_145517-var5dkbtnf.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 68,
+    "name": "司马昭",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "怀德畏威",
+    "skill_images": [
+      "/hero_skill_images/司马昭_190000-hi7zaetc6g.png",
+      "/hero_skill_images/司马懿_110233-e26g4aszty.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 69,
+    "name": "司马炎",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "谋议宏图",
+    "skill_images": [
+      "/hero_skill_images/司马炎_125134-no6eguc4mh.png",
+      "/hero_skill_images/司马炎_125157-wj17liguko.png",
+      "/hero_skill_images/司马炎_144411-bd1fzis3hq.jpeg",
+      "/hero_skill_images/司马懿_110247-l51jbw4gos.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 70,
+    "name": "吕姬",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "缚父临危",
+    "skill_images": [
+      "/hero_skill_images/吕姬_202745-f9tyqd7j8w.png",
+      "/hero_skill_images/吕姬_202809-js1lsmp0ni.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 71,
+    "name": "周仓",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "持刀",
+    "skill_images": [
+      "/hero_skill_images/周仓_170212-oaknzub29q.jpeg",
+      "/hero_skill_images/周仓_145900-rveigwn6sk.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 72,
+    "name": "周姬",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "吴"
+    ],
+    "skill_name": "复誓业火",
+    "skill_images": [
+      "/hero_skill_images/周姬_131235-znh0slmipw.jpeg",
+      "/hero_skill_images/周姬_131235-znh0slmipw.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 73,
+    "name": "夏侯惇",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "凤仪亭",
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 74,
+    "name": "夏侯渊",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "虎步关右",
+    "skill_images": [
+      "/hero_skill_images/夏侯渊_094119-95fram17yn.png",
+      "/hero_skill_images/夏侯渊_094504-4jh9i5kuns.jpeg",
+      "/hero_skill_images/夏侯渊_094253-ozrfvej5ua.jpeg",
+      "/hero_skill_images/夏侯渊_094524-dpm2vbycuz.jpeg",
+      "/hero_skill_images/夏侯渊_094556-hlvus8eokm.jpeg",
+      "/hero_skill_images/夏侯渊_094544-i384tmhenq.jpeg",
+      "/hero_skill_images/夏侯渊_094621-ecs04vkhjp.jpeg",
+      "/hero_skill_images/夏侯渊_094621-ecs04vkhjp.jpeg",
+      "/hero_skill_images/夏侯渊_094625-pqcs3zj0ih.jpeg",
+      "/hero_skill_images/夏侯渊_094630-t17rycsevf.jpeg",
+      "/hero_skill_images/夏侯渊_094634-g3rscvjtfk.jpeg",
+      "/hero_skill_images/夏侯渊_094638-wtg6erqol1.jpeg",
+      "/hero_skill_images/夏侯渊_094647-jszek9c074.jpeg",
+      "/hero_skill_images/夏侯渊_094653-bmudqtksjy.jpeg",
+      "/hero_skill_images/夏侯渊_094705-1tp3yc82ze.jpeg",
+      "/hero_skill_images/夏侯渊_094710-9efuyh7vpt.jpeg",
+      "/hero_skill_images/夏侯渊_094713-ct483qzw5i.jpeg",
+      "/hero_skill_images/夏侯渊_094717-zwhrj15s7b.jpeg",
+      "/hero_skill_images/夏侯渊_094725-3kusqjrin1.jpeg",
+      "/hero_skill_images/夏侯渊_094721-rsg0n58917.jpeg",
+      "/hero_skill_images/夏侯渊_094750-35u7h6bqst.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 75,
+    "name": "夏侯霸",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "虎步陷阵",
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 76,
+    "name": "大乔",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "吴"
+    ],
+    "skill_name": "巧音唤蝶",
+    "skill_images": [
+      "/hero_skill_images/大乔_100352-tojscfprs1.jpeg",
+      "/hero_skill_images/大乔_100443-bi4jt0a7k8.jpeg",
+      "/hero_skill_images/大乔_100454-1qpc40jidn.jpeg",
+      "/hero_skill_images/大乔_100501-8cop30dje5.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 77,
+    "name": "妲己",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "推荐转型兵种",
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 78,
+    "name": "妺喜",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "酩酊不休",
+    "skill_images": [
+      "/hero_skill_images/妺喜_103847-wu1m7ql402.jpeg",
+      "/hero_skill_images/妺喜_220828-aqrp9d301z.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 79,
+    "name": "孙尚香",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "吴"
+    ],
+    "skill_name": "枭姬",
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 80,
+    "name": "孙鲁班",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "吴"
+    ],
+    "skill_name": "全主",
+    "skill_images": [
+      "/hero_skill_images/孙策_234757-0scwbs729v.png",
+      "/hero_skill_images/孙鲁班_211632-7wbm8f45rg.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 81,
+    "name": "小乔",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "吴"
+    ],
+    "skill_name": "洛水佳人",
+    "skill_images": [
+      "/hero_skill_images/小乔_191625-9luh8rbpig.png",
+      "/hero_skill_images/小乔_120703-43ulnec8yz.png",
+      "/hero_skill_images/小乔_131426-0decv3291o.png",
+      "/hero_skill_images/小乔_131549-c3i7mbhk94.png",
+      "/hero_skill_images/小乔_130918-g45pu39z7r.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 82,
+    "name": "张姬",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "将门虎女",
+    "skill_images": [
+      "/hero_skill_images/张姬_145801-r1mv2s79fa.jpeg",
+      "/hero_skill_images/张姬_173348-npti9j08hf.png",
+      "/hero_skill_images/张姬_173358-y782ljq15p.png",
+      "/hero_skill_images/张姬_173410-zrwo13bs8i.png",
+      "/hero_skill_images/张姬_173420-ld4ewzmpf9.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 83,
+    "name": "张宁",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "国服张宁目前的成就是",
+    "skill_images": [
+      "/hero_skill_images/张宁_1_kol_20250904_69e9f3da2d3f72b0b19a73b295c9edab.jpeg",
+      "/hero_skill_images/张宁_1_kol_20250904_f57fc5c73b2a13d3361c94be54d40611.jpeg",
+      "/hero_skill_images/张宁_1_kol_20250904_1490afa1a8affa8e04ad148b3f77f0f3.png",
+      "/hero_skill_images/张宁_1_kol_20250904_ed57cd9427903a70a9a3532fe7988cbf.jpeg",
+      "/hero_skill_images/张宁_1_kol_20250904_9f3d6281f32b018d3f8373c39c9f63a3.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 84,
+    "name": "张宝",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "地公将军",
+    "skill_images": [
+      "/hero_skill_images/张宝_000852-plsa1i3hue.jpeg",
+      "/hero_skill_images/张宝_000908-y0lounfmz1.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 85,
+    "name": "张昭",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "吴"
+    ],
+    "skill_name": "查询链接戳这",
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 86,
+    "name": "张机",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "避其锋芒",
+    "skill_images": [
+      "/hero_skill_images/张机_224411-bqss8gzclj.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 87,
+    "name": "张绣",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "宣威再战",
+    "skill_images": [
+      "/hero_skill_images/张绣_223658-ns2uocjh78.jpeg",
+      "/hero_skill_images/张机_224411-bqss8gzclj.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 88,
+    "name": "徐庶",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "主 战法解析",
+    "skill_images": [
+      "/hero_skill_images/徐庶_232507-duhp148js2.png",
+      "/hero_skill_images/徐庶_232447-dm5yzl9j8a.png",
+      "/hero_skill_images/徐庶_232436-d2910lbnjv.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 89,
+    "name": "文鸯",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "盛气横凌",
+    "skill_images": [
+      "/hero_skill_images/张飞_234621-t1cqnv3yhg.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 90,
+    "name": "曹丕",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "魏武之泽",
+    "skill_images": [
+      "/hero_skill_images/曹丕_121617-y5ph287jqs.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 91,
+    "name": "曹彰",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "五兵之烈",
+    "skill_images": [
+      "/hero_skill_images/曹彰_174302-5rwht1742v.jpeg",
+      "/hero_skill_images/曹彰_175845-2s34cglmi5.jpeg",
+      "/hero_skill_images/曹彰_214646-zjc2u3hbok.png",
+      "/hero_skill_images/曹彰_214656-7h1d9rgpvo.png",
+      "/hero_skill_images/曹彰_214706-2wc0vfl4g9.png",
+      "/hero_skill_images/曹彰_214717-5wes4gikbm.png",
+      "/hero_skill_images/曹彰_214730-51tgsb8jzr.png",
+      "/hero_skill_images/曹植_225338-1wjs6o752u.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 92,
+    "name": "曹植",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 93,
+    "name": "曹纯",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 94,
+    "name": "木鹿大王",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "夔吼象踏",
+    "skill_images": [
+      "/hero_skill_images/曹纯_1_kol_20250622_86ae7f5fbe2285ea72347cd2e4e750a1.jpeg",
+      "/hero_skill_images/木鹿大王_153735-yn8frkwldq.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 95,
+    "name": "朱儁",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "节镇关东",
+    "skill_images": [
+      "/hero_skill_images/朱儁_110613-ksb5rs8l63.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 96,
+    "name": "杜预",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "三军夺帅",
+    "skill_images": [
+      "/hero_skill_images/杜预_171323-qesfv61cgz.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 97,
+    "name": "沙摩柯",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "落首箭",
+    "skill_images": [
+      "/hero_skill_images/杜预_171323-qesfv61cgz.png",
+      "/hero_skill_images/沙摩柯_103302-cufhzmnp3t.jpeg",
+      "/hero_skill_images/沙摩柯_103326-zd7i53kury.png",
+      "/hero_skill_images/沙摩柯_103252-91pvy2l0ra.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 98,
+    "name": "灵帝",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": null,
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 99,
+    "name": "王允",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "连环计",
+    "skill_images": [
+      "/hero_skill_images/王允_175841-jd4htupf6q.png",
+      "/hero_skill_images/王允_175859-uyhsetqzar.png",
+      "/hero_skill_images/王允_175902-fsesyd5qtb.png",
+      "/hero_skill_images/王允_175906-c23iub0es1.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 100,
+    "name": "王元姬",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "明慧通透",
+    "skill_images": [
+      "/hero_skill_images/王元姬_122437-fcyimljbuw.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 101,
+    "name": "王昭君",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "汉韵旷野",
+    "skill_images": [
+      "/hero_skill_images/王昭君_1_kol_20250129_a8ca36197761793bfc5ad3f24eedce5a.jpeg",
+      "/hero_skill_images/甘宁_115545-kpos5n8de0.png",
+      "/hero_skill_images/王昭君_1_kol_20250129_47798b0d0116d773378c115a7725a977.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 102,
+    "name": "甄洛",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "幽兰洛神",
+    "skill_images": [
+      "/hero_skill_images/甄洛_221610-pj7chdr34g.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 103,
+    "name": "田丰",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "甚陷不惧",
+    "skill_images": [
+      "/hero_skill_images/田丰_194143-l94jv2twis.jpeg",
+      "/hero_skill_images/田丰_200402-79hauis0tc.jpeg",
+      "/hero_skill_images/田丰_195412-ebd63th478.jpeg",
+      "/hero_skill_images/田丰_200402-79hauis0tc.jpeg",
+      "/hero_skill_images/田丰_225842-lm681uj95s.jpeg",
+      "/hero_skill_images/田丰_231727-ly6br3pjq4.jpeg",
+      "/hero_skill_images/田丰_231723-7l69js1kmu.jpeg",
+      "/hero_skill_images/田丰_231730-t39ohnqzeb.jpeg",
+      "/hero_skill_images/田丰_231732-96d2qlapjh.jpeg",
+      "/hero_skill_images/田丰_231735-w5gmvle7cf.jpeg",
+      "/hero_skill_images/田丰_202047-zohywqumb6.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 104,
+    "name": "皇甫嵩",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "京观垒冢",
+    "skill_images": [
+      "/hero_skill_images/皇甫嵩_201948-at4phjsnwc.jpeg",
+      "/hero_skill_images/皇甫嵩_220007-8524e31wnm.png",
+      "/hero_skill_images/皇甫嵩_203642-hq3iz8ctbv.jpeg",
+      "/hero_skill_images/皇甫嵩_204929-bvc92kz3pt.jpeg",
+      "/hero_skill_images/皇甫嵩_134527-b7lvfrsz2s.png",
+      "/hero_skill_images/皇甫嵩_134537-l3s84te1jc.png",
+      "/hero_skill_images/皇甫嵩_134555-y80wutksaf.png",
+      "/hero_skill_images/皇甫嵩_134705-mgsf840pql.png",
+      "/hero_skill_images/皇甫嵩_134655-4cjnuozy6m.png",
+      "/hero_skill_images/皇甫嵩_211726-syn1rv6tom.jpeg",
+      "/hero_skill_images/皇甫嵩_211720-ui4vky9fmo.jpeg",
+      "/hero_skill_images/皇甫嵩_211723-52ys1ivwcp.jpeg",
+      "/hero_skill_images/皇甫嵩_211726-syn1rv6tom.jpeg",
+      "/hero_skill_images/皇甫嵩_211730-k3fouas7lr.jpeg",
+      "/hero_skill_images/皇甫嵩_211705-egisf0duby.jpeg",
+      "/hero_skill_images/皇甫嵩_211738-bgidwh4kpl.jpeg",
+      "/hero_skill_images/皇甫嵩_211743-pkn01ed87j.jpeg",
+      "/hero_skill_images/皇甫嵩_211747-vts0u28lz9.jpeg",
+      "/hero_skill_images/皇甫嵩_211825-sm6bqvyrls.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 105,
+    "name": "程普",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "吴"
+    ],
+    "skill_name": "鏖兵为主",
+    "skill_images": [
+      "/hero_skill_images/程普_230227-tlz7quesr3.png",
+      "/hero_skill_images/程普_194754-75bwsrhv94.png",
+      "/hero_skill_images/程普_194956-la6ewc0fp8.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 106,
+    "name": "羊祜",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "潜谋",
+    "skill_images": [
+      "/hero_skill_images/羊祜_130131-eqhkai8rl0.png",
+      "/hero_skill_images/羊祜_112304-vuhai4kg5p.jpeg",
+      "/hero_skill_images/羊祜_112344-vbitj896ls.jpeg",
+      "/hero_skill_images/羊祜_113200-epqgu58kdy.jpeg",
+      "/hero_skill_images/程普_194754-75bwsrhv94.png",
+      "/hero_skill_images/羊祜_130511-93v2dbrpo5.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 107,
+    "name": "荀攸",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "谋主",
+    "skill_images": [
+      "/hero_skill_images/羊祜_113200-epqgu58kdy.jpeg",
+      "/hero_skill_images/荀攸_092722-z0ndowhist.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 108,
+    "name": "董白",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "俭仪 蹈 和",
+    "skill_images": [
+      "/hero_skill_images/董白_232207-iqt4uzsjd7.png",
+      "/hero_skill_images/董白_232506-dpl87hjq32.png",
+      "/hero_skill_images/董白_232525-8dw367flca.png",
+      "/hero_skill_images/董白_120828-gfcpzvmky3.jpeg",
+      "/hero_skill_images/董白_120918-g3h5r8wmnu.png",
+      "/hero_skill_images/董白_122352-br1k85t2wg.png",
+      "/hero_skill_images/董白_122357-1fuorlvq5d.png",
+      "/hero_skill_images/董白_122400-swir9hpu7a.png",
+      "/hero_skill_images/董白_122403-3km5eido8y.png",
+      "/hero_skill_images/董白_122410-wakm7cbo4y.png",
+      "/hero_skill_images/董白_122407-7ni3cd0mwv.png",
+      "/hero_skill_images/董白_122413-n2feg4sh60.png",
+      "/hero_skill_images/董白_122416-2hyi6g3q87.png",
+      "/hero_skill_images/董白_122418-lkepcsym6z.png",
+      "/hero_skill_images/董白_122421-kw0l5ovea9.png",
+      "/hero_skill_images/董白_122423-8a26ev1bd3.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 109,
+    "name": "蒋钦",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "吴"
+    ],
+    "skill_name": "怒浪伐敌",
+    "skill_images": [
+      "/hero_skill_images/褒姒_200345-f8yiz45h1g.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 110,
+    "name": "褒姒",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "烽火覆周",
+    "skill_images": [
+      "/hero_skill_images/褒姒_104026-f1zvsyo4tg.jpeg",
+      "/hero_skill_images/褒姒_200337-4aqovyib87.png",
+      "/hero_skill_images/褒姒_200345-f8yiz45h1g.png",
+      "/hero_skill_images/褒姒_200356-cdayvszs54.png",
+      "/hero_skill_images/西施_192253-s364vw2dqz.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 111,
+    "name": "西施",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "绮阁飘香",
+    "skill_images": [
+      "/hero_skill_images/西施_115552-rflwhzs1dt.jpeg",
+      "/hero_skill_images/西施_192253-s364vw2dqz.png",
+      "/hero_skill_images/西施_193935-30gc7bo5mi.png",
+      "/hero_skill_images/西施_193944-hpvtren7c1.png",
+      "/hero_skill_images/诸葛恪_224855-hot6ly3fp2.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 112,
+    "name": "诸葛恪",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "吴"
+    ],
+    "skill_name": "智高性愎",
+    "skill_images": [
+      "/hero_skill_images/诸葛恪_224855-hot6ly3fp2.png",
+      "/hero_skill_images/诸葛恪_224907-kutos7myfb.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 113,
+    "name": "贾充",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "赏顺伐逆",
+    "skill_images": [
+      "/hero_skill_images/贾充_160641-n3bjzw6g92.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 114,
+    "name": "郝昭",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "神兵天降",
+    "skill_images": [
+      "/hero_skill_images/郝昭_105454-32vcew0ol7.png",
+      "/hero_skill_images/郝昭_105717-821s6qmu70.jpeg",
+      "/hero_skill_images/郝昭_105640-mbfc5uo1jw.jpeg",
+      "/hero_skill_images/郝昭_110945-jyn0h5qe1t.jpeg",
+      "/hero_skill_images/郝昭_105717-821s6qmu70.jpeg",
+      "/hero_skill_images/郝昭_105838-b6g1ydwf39.jpeg",
+      "/hero_skill_images/郝昭_105722-y9pmaosjdc.jpeg",
+      "/hero_skill_images/郝昭_105726-n7tz2q8p59.jpeg",
+      "/hero_skill_images/郝昭_105729-ws4faqi7v6.jpeg",
+      "/hero_skill_images/郝昭_105734-drmztisba0.jpeg",
+      "/hero_skill_images/郝昭_105740-uctrjyaf0z.jpeg",
+      "/hero_skill_images/郝昭_105749-28wk5mb7av.jpeg",
+      "/hero_skill_images/郝昭_105755-vgmn71rfud.jpeg",
+      "/hero_skill_images/郝昭_105802-05pk39teq8.jpeg",
+      "/hero_skill_images/郝昭_105851-rcvolu39f8.jpeg",
+      "/hero_skill_images/郝昭_105856-m5itkdrgl4.jpeg",
+      "/hero_skill_images/郝昭_105900-sl8se0nmc6.jpeg",
+      "/hero_skill_images/郝昭_105904-7eo2pflkt1.jpeg",
+      "/hero_skill_images/郝昭_105909-pks0f4dci1.jpeg",
+      "/hero_skill_images/郝昭_105913-e36fvsqk2w.jpeg",
+      "/hero_skill_images/郝昭_105917-qvbugsc1ko.jpeg",
+      "/hero_skill_images/郝昭_105921-c32pn5tvm1.jpeg",
+      "/hero_skill_images/郝昭_105927-oqu0nd9why.jpeg",
+      "/hero_skill_images/郝昭_105932-ic5kb62vpt.jpeg",
+      "/hero_skill_images/郝昭_105942-esvfr2mqt0.jpeg",
+      "/hero_skill_images/郝昭_105948-ltj6nsk745.jpeg",
+      "/hero_skill_images/郝昭_105951-iwvsfh9aec.jpeg",
+      "/hero_skill_images/郝昭_105958-437dbr6sqm.jpeg",
+      "/hero_skill_images/郝昭_105951-iwvsfh9aec.jpeg",
+      "/hero_skill_images/郝昭_110015-p39aiu5lhs.jpeg",
+      "/hero_skill_images/郝昭_110018-y3za5k92lr.jpeg",
+      "/hero_skill_images/郝昭_110024-kopanl8v5d.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 115,
+    "name": "郭皇后",
+    "camp": "魏",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "魏"
+    ],
+    "skill_name": "文德",
+    "skill_images": [
+      "/hero_skill_images/郭皇后_212915-jk9do3leat.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 116,
+    "name": "阴丽华",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "辞后定朝",
+    "skill_images": [
+      "/hero_skill_images/阴丽华_115916-qz8km4h0fj.jpeg",
+      "/hero_skill_images/阴丽华_120359-igmt6swh2r.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 117,
+    "name": "陆抗",
+    "camp": "吴",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "吴"
+    ],
+    "skill_name": "西陵克晋",
+    "skill_images": [
+      "/hero_skill_images/陆抗_214245-7cdavw8p34.png",
+      "/hero_skill_images/陆抗_214304-6v3dlzafsp.png",
+      "/hero_skill_images/陆抗_214346-j9bpsfyovz.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 118,
+    "name": "马云禄",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "红颜铁骑",
+    "skill_images": [
+      "/hero_skill_images/马云禄_232350-znwqd5gk89.png",
+      "/hero_skill_images/马云禄_232411-obju2mvnc5.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 119,
+    "name": "马岱",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "老碧的理解是",
+    "skill_images": [],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 120,
+    "name": "骊姬",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "陷储",
+    "skill_images": [
+      "/hero_skill_images/骊姬_121526-duov51qsy4.jpeg",
+      "/hero_skill_images/骊姬_122021-k7pg5vybci.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 121,
+    "name": "高顺",
+    "camp": "群",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "群"
+    ],
+    "skill_name": "陷阵",
+    "skill_images": [
+      "/hero_skill_images/高顺_190917-1ytscr8vz0.png",
+      "/hero_skill_images/高顺_191039-9fwsdil2oj.png",
+      "/hero_skill_images/高顺_191039-9fwsdil2oj.png",
+      "/hero_skill_images/高顺_191102-vy0tzge65i.png",
+      "/hero_skill_images/高顺_191110-2cju849vdz.png",
+      "/hero_skill_images/高顺_191213-z6tceblnpo.png",
+      "/hero_skill_images/高顺_191224-6gsqc091zv.png",
+      "/hero_skill_images/高顺_191414-4i8soqa536.png",
+      "/hero_skill_images/高顺_191250-p6v7gtwsi1.png",
+      "/hero_skill_images/高顺_191305-so3qu4e7ws.png",
+      "/hero_skill_images/高顺_191414-4i8soqa536.png",
+      "/hero_skill_images/高顺_191422-6lhbd1nguw.png",
+      "/hero_skill_images/高顺_191816-megaz47v28.png",
+      "/hero_skill_images/高顺_192113-hame6ropzs.jpeg",
+      "/hero_skill_images/高顺_192117-3bsiq8ustg.jpeg",
+      "/hero_skill_images/高顺_192153-36ycgked74.jpeg",
+      "/hero_skill_images/高顺_192157-lmvcatgh5e.jpeg",
+      "/hero_skill_images/高顺_192337-7tl4pwykss.jpeg",
+      "/hero_skill_images/高顺_192204-ih0pul91fn.jpeg",
+      "/hero_skill_images/高顺_192214-km7h0be564.jpeg",
+      "/hero_skill_images/高顺_192337-7tl4pwykss.jpeg",
+      "/hero_skill_images/高顺_192224-ipwrn5dh19.jpeg",
+      "/hero_skill_images/高顺_192224-7wdrjf5auv.jpeg",
+      "/hero_skill_images/高顺_192227-4wmpuohlj9.jpeg",
+      "/hero_skill_images/高顺_192230-mwust3qle1.jpeg"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  },
+  {
+    "id": 122,
+    "name": "黄月英",
+    "camp": "蜀",
+    "troop_type": "步兵",
+    "attack": null,
+    "defense": null,
+    "speed": null,
+    "tags": [
+      "四星",
+      "蜀"
+    ],
+    "skill_name": "匠心不竭",
+    "skill_images": [
+      "/hero_skill_images/鲁肃_135043-mk1s0znr2a.png"
+    ],
+    "skill_desc": null,
+    "skill_type": null,
+    "skill_trigger_rate": null
+  }
+]

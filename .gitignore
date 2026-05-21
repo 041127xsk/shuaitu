@@ -1,0 +1,106 @@
+# 环境与凭证
+.env
+.env.local
+.env.*.local
+apikey.txt
+*.pem
+*.key
+
+# 数据库（生成产物）
+*.db
+*.sqlite
+*.sqlite3
+
+# 抓取结果（生成产物）
+data/fetched_heroes.json
+data/fetched_heroes_all.json
+data/export_all.json
+data/export_*.json
+data/export_*.csv
+data/directory_anchors.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# 测试
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 日志
+*.log
+run.log
+
+# Node / 前端
+node_modules/
+
+# Wails 构建产物
+stzb-helper-v2/frontend/dist/
+stzb-helper-v2/build/bin/
+
+# 工具/环境目录
+.workbuddy/
+.playwright-cli/
+
+# 临时翻页脚本
+scroll_*.ps1
+scroll_device.bat
+
+# Python 生成产物
+output/
+analysis/__pycache__/
+
+# 用户数据
+战报助手/
+战报助手_v1.0.zip
+战报助手.spec
+tools/
+
+# 大备份文件
+pcb_analyzer_backup_20260515_214526.zip
+
+# 临时脚本
+scroll_*.ps1
+scroll_device.bat
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+### AL (Dynamics 365 Business Central) ###
+# launch.json folder
+.vscode/
+# Cache folder
+.alcache/
+# Symbols folder
+.alpackages/
+# Snapshots folder
+.snapshots/
+# Testing Output folder
+.output/
+# Extension App-file
+*.app
+# Rapid Application Development File
+rad.json
+# Translation Base-file
+*.g.xlf
+# License-files
+*.bclicense
+*.flf
+# Test results file
+TestResults.xml

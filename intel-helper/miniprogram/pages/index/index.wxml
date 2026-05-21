@@ -1,0 +1,66 @@
+<view class="container">
+  <!-- 欢迎卡片 -->
+  <view class="card welcome-card">
+    <view class="welcome-content">
+      <text class="welcome-title">率土战报情报库</text>
+      <text class="welcome-subtitle">记录战报 · 分析克制 · 收集情报</text>
+    </view>
+    <view class="welcome-decoration">
+      <text class="deco-icon">⚔️</text>
+    </view>
+  </view>
+  
+  <!-- 功能入口 -->
+  <view class="features">
+    <view class="feature-item" bindtap="goToUpload">
+      <view class="feature-icon" style="background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);">
+        <text class="icon">📤</text>
+      </view>
+      <view class="feature-text">
+        <text class="feature-title">上传战报</text>
+        <text class="feature-desc">OCR智能识别武将信息</text>
+      </view>
+    </view>
+    
+    <view class="feature-item" bindtap="goToSearch">
+      <view class="feature-icon" style="background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);">
+        <text class="icon">🔍</text>
+      </view>
+      <view class="feature-text">
+        <text class="feature-title">搜索玩家</text>
+        <text class="feature-desc">查看玩家历史队伍</text>
+      </view>
+    </view>
+    
+    <view class="feature-item" bindtap="goToHeroes">
+      <view class="feature-icon" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+        <text class="icon">⚔️</text>
+      </view>
+      <view class="feature-text">
+        <text class="feature-title">武将库</text>
+        <text class="feature-desc">浏览所有武将属性</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 快捷入口 -->
+  <view class="quick-access card">
+    <text class="section-title">快捷入口</text>
+    <view class="quick-btns">
+      <button class="quick-btn" bindtap="goToUpload">上传战报</button>
+      <button class="quick-btn" bindtap="goToSearch">搜索玩家</button>
+      <button class="quick-btn" bindtap="goToHeroes">武将库</button>
+    </view>
+  </view>
+  
+  <!-- 服务器状态 -->
+  <view class="card status-card">
+    <view class="status-header">
+      <text class="status-title">服务器状态</text>
+      <view class="status-indicator {{isOnline ? 'online' : 'offline'}}">
+        {{isOnline ? '在线' : '离线'}}
+      </view>
+    </view>
+    <text class="api-url">{{apiBase}}</text>
+  </view>
+</view>

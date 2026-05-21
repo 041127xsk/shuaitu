@@ -1,0 +1,38 @@
+# 率土战报情报库 .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# 环境变量
+.env
+
+# 数据库
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# 上传的文件
+data/screenshots/*
+!data/screenshots/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 日志
+*.log
+
+# 临时文件
+*.tmp
+.DS_Store
+Thumbs.db

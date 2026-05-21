@@ -1,0 +1,49 @@
+# 环境与凭据
+.env
+.env.local
+.env.*.local
+apikey.txt
+*.pem
+*.key
+
+# 数据库（生成产物）
+*.db
+*.sqlite
+*.sqlite3
+
+# 本地项目（不推上 git）
+intel-helper/
+.workbuddy/
+.playwright-cli/
+
+# Node
+node_modules/
+
+# 前端构建
+frontend/dist/
+
+# Wails 构建缓存
+build/*.app
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 日志
+*.log
+run.log
+
+# 备份文件
+*~
+
+# 配置（含本地路径）
+build/bin/config.json
+build/bin/copy-db.js
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db

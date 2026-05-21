@@ -1,0 +1,152 @@
+.team-input-section {
+  margin-bottom: 30rpx;
+}
+
+.label {
+  display: block;
+  font-size: 28rpx;
+  color: #a0a0a0;
+  margin-bottom: 20rpx;
+}
+
+.heroes-input {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.hero-input {
+  flex: 1;
+}
+
+/* 结果区域 */
+.result-section {
+  margin-top: 30rpx;
+}
+
+.result-card {
+  padding: 30rpx;
+}
+
+.enemy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.enemy-title {
+  font-size: 30rpx;
+  color: #fff;
+}
+
+.team-type {
+  font-size: 26rpx;
+  color: #e94560;
+  background: rgba(233, 69, 96, 0.2);
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+}
+
+.enemy-heroes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15rpx;
+  margin-bottom: 25rpx;
+}
+
+.enemy-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.tags-label {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 克制卡片 */
+.counter-card {
+  padding: 30rpx;
+}
+
+.counter-item {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 25rpx;
+}
+
+.counter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.counter-type {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #4ecdc4;
+}
+
+.score-badge {
+  background: rgba(255, 193, 7, 0.2);
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+}
+
+.score {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #ffc107;
+}
+
+.score-label {
+  font-size: 24rpx;
+  color: #ffc107;
+  margin-left: 5rpx;
+}
+
+.counter-reason {
+  display: block;
+  font-size: 26rpx;
+  color: #ccc;
+  line-height: 1.6;
+  margin-bottom: 25rpx;
+}
+
+.suggested-section {
+  margin-bottom: 20rpx;
+}
+
+.suggested-title {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 15rpx;
+}
+
+.suggested-heroes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.suggested-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12rpx;
+  padding-top: 15rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.no-data {
+  color: #666;
+  font-size: 26rpx;
+}

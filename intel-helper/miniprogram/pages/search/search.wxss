@@ -1,0 +1,110 @@
+.search-card {
+  padding: 30rpx;
+}
+
+.search-box {
+  display: flex;
+  gap: 20rpx;
+}
+
+.search-input {
+  flex: 1;
+}
+
+.season-picker {
+  width: 160rpx;
+}
+
+.picker-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2rpx solid rgba(255, 255, 255, 0.2);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  color: #fff;
+  text-align: center;
+  font-size: 26rpx;
+}
+
+.results {
+  margin-top: 20rpx;
+}
+
+.results-count {
+  color: #666;
+  font-size: 26rpx;
+  margin-bottom: 20rpx;
+  padding-left: 10rpx;
+}
+
+.player-card {
+  padding: 30rpx;
+  position: relative;
+}
+
+.player-card::after {
+  content: '>';
+  position: absolute;
+  right: 30rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 32rpx;
+}
+
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 15rpx;
+}
+
+.player-name {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #fff;
+}
+
+.player-info-row {
+  display: flex;
+  gap: 30rpx;
+  margin-bottom: 15rpx;
+}
+
+.info-item {
+  font-size: 26rpx;
+  color: #a0a0a0;
+}
+
+.player-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.teams-count {
+  font-size: 26rpx;
+  color: #4ecdc4;
+}
+
+.latest-time {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 100rpx 40rpx;
+}
+
+.empty-text {
+  display: block;
+  font-size: 32rpx;
+  color: #666;
+  margin-bottom: 15rpx;
+}
+
+.empty-hint {
+  display: block;
+  font-size: 26rpx;
+  color: #555;
+}

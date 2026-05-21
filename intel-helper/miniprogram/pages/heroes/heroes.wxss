@@ -1,0 +1,97 @@
+.search-card {
+  padding: 20rpx;
+}
+
+.search-input {
+  width: 100%;
+}
+
+.filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15rpx;
+  padding: 20rpx 30rpx;
+}
+
+.tab-item {
+  padding: 12rpx 28rpx;
+  border-radius: 30rpx;
+  background: rgba(255, 255, 255, 0.1);
+  color: #a0a0a0;
+  font-size: 26rpx;
+  transition: all 0.3s ease;
+}
+
+.tab-item.active {
+  background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+  color: #fff;
+}
+
+.heroes-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  padding: 20rpx 30rpx;
+}
+
+.hero-card {
+  width: calc(50% - 10rpx);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 16rpx;
+  padding: 25rpx;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.hero-avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hero-name-first {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #fff;
+}
+
+.hero-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-name {
+  display: block;
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 10rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-tags {
+  display: flex;
+  gap: 10rpx;
+}
+
+.camp-tag, .type-tag {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  color: #fff;
+}
+
+.camp-tag {
+  background: #e94560;
+}
+
+.type-tag {
+  background: rgba(255, 255, 255, 0.2);
+}

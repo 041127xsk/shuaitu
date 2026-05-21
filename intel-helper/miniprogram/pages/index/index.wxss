@@ -1,0 +1,144 @@
+.welcome-card {
+  background: linear-gradient(135deg, #1a1a2e 0%, #e94560 100%);
+  padding: 50rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-content {
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 15rpx;
+}
+
+.welcome-subtitle {
+  display: block;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.welcome-decoration {
+  position: absolute;
+  right: -20rpx;
+  top: -20rpx;
+  opacity: 0.2;
+}
+
+.deco-icon {
+  font-size: 200rpx;
+}
+
+/* 功能列表 */
+.features {
+  margin-top: 30rpx;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 30rpx;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 20rpx;
+  padding: 35rpx;
+  margin-bottom: 20rpx;
+}
+
+.feature-icon {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 25rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.feature-icon .icon {
+  font-size: 48rpx;
+}
+
+.feature-text {
+  flex: 1;
+}
+
+.feature-title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 8rpx;
+}
+
+.feature-desc {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+}
+
+/* 快捷入口 */
+.quick-access {
+  margin-top: 30rpx;
+  padding: 30rpx;
+}
+
+.quick-btns {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.quick-btn {
+  flex: 1;
+  padding: 20rpx;
+  background: rgba(233, 69, 96, 0.2);
+  border: 2rpx solid #e94560;
+  border-radius: 40rpx;
+  color: #e94560;
+  font-size: 28rpx;
+}
+
+/* 状态卡片 */
+.status-card {
+  margin-top: 30rpx;
+  padding: 30rpx;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.status-title {
+  font-size: 30rpx;
+  color: #fff;
+}
+
+.status-indicator {
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}
+
+.status-indicator.online {
+  background: rgba(78, 205, 196, 0.2);
+  color: #4ecdc4;
+}
+
+.status-indicator.offline {
+  background: rgba(233, 69, 96, 0.2);
+  color: #e94560;
+}
+
+.api-url {
+  font-size: 24rpx;
+  color: #666;
+}

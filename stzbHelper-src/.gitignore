@@ -1,0 +1,14 @@
+.idea
+*.db
+*.exe
+.vscode
+*.bak
+dist
+dist1
+*.zip
+.claude
+build/bin
+node_modules
+frontend/dist
+changelog.md
+fullchangelog.md

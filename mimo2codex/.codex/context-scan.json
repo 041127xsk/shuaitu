@@ -1,0 +1,29 @@
+{
+  "task": "使用 HyperFrames 为 mimo2codex 制作中文教程视频，重点突出 npm install 下载/安装流程。",
+  "affected_area": [
+    "tutorial-video/",
+    "README.zh.md",
+    "README.md"
+  ],
+  "source_context": {
+    "repo_summary": "mimo2codex 是让最新版 Codex CLI / 桌面端通过本地 Responses API 代理接入小米 MiMo V2.5 Pro 的 TypeScript 项目。",
+    "primary_doc": "README.zh.md 的“安装”章节，尤其是“方式 1：npm 全局安装（最简单，推荐普通用户）”。",
+    "image_assets": [
+      "01-npm-install.jpg",
+      "02-repo-doc.jpg",
+      "03-agent-skill.jpg",
+      "04-agent-docs.jpg"
+    ]
+  },
+  "implementation_direction": "创建独立 HyperFrames composition，横版 1920x1080，约 28 秒。视频以 npm 全局安装为主线，其余源码安装、cc-switch 和 agent 实测只做简短补充。",
+  "constraints": [
+    "遵守 AGENTS.md：UTF-8，代码适量中文注释，不引入 OpenAI SDK。",
+    "不新增 Python 或 npm 依赖。",
+    "HyperFrames composition 需要注册同步 GSAP timeline，并在多场景之间添加过渡。"
+  ],
+  "validation_plan": [
+    "运行 npx hyperframes lint tutorial-video。",
+    "运行 npx hyperframes inspect tutorial-video。",
+    "可用时渲染 MP4 输出到 tutorial-video/renders。"
+  ]
+}

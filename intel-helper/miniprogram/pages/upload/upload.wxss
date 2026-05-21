@@ -1,0 +1,152 @@
+.upload-card {
+  padding: 40rpx;
+}
+
+.upload-area {
+  width: 100%;
+  height: 400rpx;
+  border: 4rpx dashed rgba(233, 69, 96, 0.5);
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40rpx;
+  overflow: hidden;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #666;
+}
+
+.upload-placeholder .icon {
+  font-size: 80rpx;
+  color: #e94560;
+  margin-bottom: 20rpx;
+}
+
+.upload-placeholder .hint {
+  font-size: 32rpx;
+  margin-bottom: 10rpx;
+}
+
+.upload-placeholder .sub-hint {
+  font-size: 24rpx;
+  color: #888;
+}
+
+.form-item {
+  margin-bottom: 30rpx;
+}
+
+.form-item .label {
+  display: block;
+  font-size: 28rpx;
+  color: #a0a0a0;
+  margin-bottom: 15rpx;
+}
+
+.form-row {
+  display: flex;
+  gap: 30rpx;
+}
+
+.form-item.half {
+  flex: 1;
+}
+
+.heroes-input {
+  display: flex;
+  gap: 20rpx;
+}
+
+.hero-input {
+  flex: 1;
+}
+
+.textarea {
+  height: 150rpx;
+  padding-top: 20rpx;
+}
+
+.picker-value {
+  display: flex;
+  align-items: center;
+}
+
+/* 结果卡片 */
+.result-card {
+  padding: 40rpx;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.confidence {
+  font-size: 26rpx;
+  color: #4ecdc4;
+  background: rgba(78, 205, 196, 0.15);
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+}
+
+.result-item {
+  margin-bottom: 30rpx;
+}
+
+.item-label {
+  display: block;
+  font-size: 28rpx;
+  color: #a0a0a0;
+  margin-bottom: 15rpx;
+}
+
+.heroes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15rpx;
+}
+
+.raw-text {
+  display: block;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 20rpx;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  color: #ccc;
+  word-break: break-all;
+  max-height: 200rpx;
+  overflow-y: auto;
+}
+
+.no-data {
+  color: #666;
+  font-size: 26rpx;
+}
+
+.confirm-form {
+  margin-top: 20rpx;
+}
+
+.btn-success {
+  width: 100%;
+  margin-top: 30rpx;
+  background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+  color: #fff;
+  border: none;
+  border-radius: 50rpx;
+  padding: 24rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+}

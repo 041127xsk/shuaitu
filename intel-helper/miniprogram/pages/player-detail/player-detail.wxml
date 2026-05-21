@@ -1,0 +1,108 @@
+<view class="container">
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+  
+  <block wx:else>
+    <!-- 玩家信息 -->
+    <view class="card player-info-card">
+      <view class="player-header">
+        <view class="player-avatar">
+          <text class="avatar-text">{{playerInfo.name[0]}}</text>
+        </view>
+        <view class="player-details">
+          <text class="player-name">{{playerInfo.name}}</text>
+          <view class="player-tags">
+            <text class="tag tag-primary">{{playerInfo.season}}</text>
+            <text wx:if="{{playerInfo.alliance}}" class="tag tag-success">{{playerInfo.alliance}}</text>
+            <text wx:if="{{playerInfo.server}}" class="tag tag-warning">{{playerInfo.server}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <view class="stats-row">
+        <view class="stat-item">
+          <text class="stat-value">{{playerInfo.team_count}}</text>
+          <text class="stat-label">队伍数</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value">{{winCount}}</text>
+          <text class="stat-label">胜利</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value">{{lossCount}}</text>
+          <text class="stat-label">失败</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 队伍列表 -->
+    <view class="teams-section">
+      <text class="section-title">历史队伍</text>
+      
+      <view wx:for="{{playerInfo.teams}}" wx:key="id" class="card team-card">
+        <view class="team-header">
+          <view class="team-heroes">
+            <text wx:for="{{item.members}}" wx:key="id" wx:for-item="member" 
+                  class="hero-chip" style="background: {{getCampColor(getHeroCamp(member.hero_name))}}">
+              {{member.hero_name}}
+            </text>
+          </view>
+          <view class="team-result {{item.battle_result}}">
+            {{getResultText(item.battle_result)}}
+          </view>
+        </view>
+        
+        <view class="team-info">
+          <text class="team-time">{{item.created_at}}</text>
+          <text wx:if="{{item.team_name}}" class="team-name">{{item.team_name}}</text>
+        </view>
+        
+        <button class="btn-counter" bindtap="analyzeCounter" data-team-id="{{item.id}}">
+          克制分析
+        </button>
+      </view>
+    </view>
+  </block>
+  
+  <!-- 克制分析结果弹窗 -->
+  <view wx:if="{{showCounterModal}}" class="modal-overlay" bindtap="closeCounterModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">克制分析</text>
+        <text class="modal-close" bindtap="closeCounterModal">×</text>
+      </view>
+      
+      <view class="modal-body">
+        <view class="enemy-section">
+          <text class="enemy-title">敌方队伍</text>
+          <view class="enemy-heroes">
+            <text wx:for="{{counterResult.enemy_team}}" wx:key="index" 
+                  class="tag tag-primary">{{item}}</text>
+          </view>
+          <view class="enemy-tags">
+            <text class="enemy-type">队伍类型: <text class="highlight">{{counterResult.enemy_type}}</text></text>
+            <text class="tags-label">标签:</text>
+            <text wx:for="{{counterResult.enemy_tags}}" wx:key="index" 
+                  class="tag tag-warning">{{item}}</text>
+          </view>
+        </view>
+        
+        <view class="counter-section">
+          <text class="counter-title">推荐克制</text>
+          
+          <view wx:for="{{counterResult.recommendations}}" wx:key="index" class="counter-item">
+            <view class="counter-header">
+              <text class="counter-type">{{item.type}}</text>
+              <text class="counter-score">{{item.score}}分</text>
+            </view>
+            <text class="counter-reason">{{item.reason}}</text>
+            <view class="suggested-heroes">
+              <text class="suggested-label">推荐武将:</text>
+              <text wx:for="{{item.suggested_heroes}}" wx:key="index" 
+                    wx:for-item="hero" class="tag tag-success">{{hero}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

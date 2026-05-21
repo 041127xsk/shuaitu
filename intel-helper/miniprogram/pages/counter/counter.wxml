@@ -1,0 +1,68 @@
+<view class="container">
+  <view class="card">
+    <text class="section-title">队伍克制分析</text>
+    
+    <view class="team-input-section">
+      <text class="label">输入敌方队伍武将</text>
+      <view class="heroes-input">
+        <input wx:for="{{3}}" wx:key="index" class="input hero-input" 
+               placeholder="武将{{index + 1}}" value="{{heroes[index]}}" 
+               bindinput="onHeroInput" data-index="{{index}}" />
+      </view>
+    </view>
+    
+    <button class="btn btn-primary" bindtap="analyzeTeam">开始分析</button>
+  </view>
+  
+  <view wx:if="{{result}}" class="result-section">
+    <view class="card result-card">
+      <view class="enemy-header">
+        <text class="enemy-title">敌方队伍</text>
+        <text class="team-type">{{result.enemy_type}}</text>
+      </view>
+      
+      <view class="enemy-heroes">
+        <text wx:for="{{result.enemy_team}}" wx:key="index" 
+              class="tag tag-primary">{{item}}</text>
+      </view>
+      
+      <view class="enemy-tags">
+        <text class="tags-label">队伍标签:</text>
+        <text wx:for="{{result.enemy_tags}}" wx:key="index" 
+              class="tag tag-warning">{{item}}</text>
+      </view>
+    </view>
+    
+    <view class="card counter-card">
+      <text class="section-title">克制建议</text>
+      
+      <view wx:for="{{result.recommendations}}" wx:key="index" class="counter-item">
+        <view class="counter-header">
+          <text class="counter-type">{{item.type}}</text>
+          <view class="score-badge">
+            <text class="score">{{item.score}}</text>
+            <text class="score-label">分</text>
+          </view>
+        </view>
+        
+        <text class="counter-reason">{{item.reason}}</text>
+        
+        <view class="suggested-section">
+          <text class="suggested-title">推荐武将:</text>
+          <view class="suggested-heroes">
+            <text wx:for="{{item.suggested_heroes}}" wx:key="index" 
+                  wx:for-item="hero" class="tag tag-success">{{hero}}</text>
+            <text wx:if="{{!item.suggested_heroes || item.suggested_heroes.length === 0}}" 
+                  class="no-data">暂无推荐</text>
+          </view>
+        </view>
+        
+        <view class="suggested-tags">
+          <text class="tags-label">推荐标签:</text>
+          <text wx:for="{{item.suggested_tags}}" wx:key="index" 
+                class="tag tag-primary">{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,70 @@
+<view class="container">
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+  
+  <block wx:else>
+    <!-- 武将信息卡 -->
+    <view class="card hero-card">
+      <view class="hero-header">
+        <view class="hero-avatar large" style="background: {{getCampColor(hero.camp)}}">
+          <text class="avatar-text">{{hero.name[0]}}</text>
+        </view>
+        <view class="hero-basic">
+          <text class="hero-name">{{hero.name}}</text>
+          <view class="hero-tags">
+            <text class="camp-tag" style="background: {{getCampColor(hero.camp)}}">{{hero.camp || '群'}}国</text>
+            <text class="type-tag">{{hero.troop_type || '步兵'}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 属性 -->
+    <view class="card attrs-card">
+      <text class="section-title">基础属性</text>
+      <view class="attrs-grid">
+        <view class="attr-item">
+          <text class="attr-label">攻击</text>
+          <text class="attr-value attack">{{hero.attack || '--'}}</text>
+        </view>
+        <view class="attr-item">
+          <text class="attr-label">防御</text>
+          <text class="attr-value defense">{{hero.defense || '--'}}</text>
+        </view>
+        <view class="attr-item">
+          <text class="attr-label">速度</text>
+          <text class="attr-value speed">{{hero.speed || '--'}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 标签 -->
+    <view class="card tags-card">
+      <text class="section-title">武将特点</text>
+      <view class="tags-list">
+        <text wx:for="{{hero.tags}}" wx:key="index" class="tag tag-primary">{{item}}</text>
+      </view>
+    </view>
+    
+    <!-- 克制分析 -->
+    <view class="card counter-card">
+      <text class="section-title">克制关系</text>
+      <view class="counter-list">
+        <view wx:if="{{counterInfo}}" class="counter-info">
+          <view class="counter-section">
+            <text class="counter-title">被谁克制</text>
+            <view class="tags-list">
+              <text wx:for="{{counterInfo.countered_by}}" wx:key="index" class="tag tag-warning">{{item}}</text>
+            </view>
+          </view>
+          <view class="counter-section">
+            <text class="counter-title">克制谁</text>
+            <view class="tags-list">
+              <text wx:for="{{counterInfo.counters}}" wx:key="index" class="tag tag-success">{{item}}</text>
+            </view>
+          </view>
+        </view>
+        <text wx:else class="no-data">暂无克制数据</text>
+      </view>
+    </view>
+  </block>
+</view>

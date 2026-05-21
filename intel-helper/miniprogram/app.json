@@ -1,0 +1,47 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/upload/upload",
+    "pages/search/search",
+    "pages/heroes/heroes",
+    "pages/hero-detail/hero-detail",
+    "pages/counter/counter",
+    "pages/player-detail/player-detail"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#1a1a2e",
+    "navigationBarTitleText": "率土战报情报库",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#16213e",
+    "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "color": "#a0a0a0",
+    "selectedColor": "#e94560",
+    "backgroundColor": "#1a1a2e",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/upload/upload",
+        "text": "上传战报",
+        "iconPath": "assets/icons/upload.png",
+        "selectedIconPath": "assets/icons/upload-active.png"
+      },
+      {
+        "pagePath": "pages/search/search",
+        "text": "搜索玩家",
+        "iconPath": "assets/icons/search.png",
+        "selectedIconPath": "assets/icons/search-active.png"
+      },
+      {
+        "pagePath": "pages/heroes/heroes",
+        "text": "武将库",
+        "iconPath": "assets/icons/hero.png",
+        "selectedIconPath": "assets/icons/hero-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

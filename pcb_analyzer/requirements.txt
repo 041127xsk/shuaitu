@@ -1,0 +1,6 @@
+gerbonara
+matplotlib
+numpy
+pandas
+pyyaml
+pytest

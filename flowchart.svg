@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#000" />
+    </marker>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="100%" height="100%" fill="#f5f5f5" />
+  
+  <!-- 标题 -->
+  <text x="400" y="40" font-family="SimHei, Arial" font-size="24" text-anchor="middle" fill="#333">图4-1 系统主程序流程图</text>
+  
+  <!-- 开始 -->
+  <ellipse cx="400" cy="80" rx="80" ry="30" fill="#4CAF50" stroke="#388E3C" stroke-width="2" />
+  <text x="400" y="85" font-family="SimSun, Arial" font-size="14" text-anchor="middle" fill="white">开始</text>
+  
+  <!-- 箭头：开始 -> 变量声明 -->
+  <line x1="400" y1="110" x2="400" y2="140" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 变量声明 -->
+  <rect x="250" y="140" width="300" height="40" rx="5" fill="#2196F3" stroke="#1976D2" stroke-width="2" />
+  <text x="400" y="165" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">声明变量：disp_buf1, disp_buf2, adc_ph, adc_turb, adc_do</text>
+  
+  <!-- 箭头：变量声明 -> 延时 -->
+  <line x1="400" y1="180" x2="400" y2="210" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 延时200ms -->
+  <rect x="300" y="210" width="200" height="40" rx="5" fill="#FF9800" stroke="#F57C00" stroke-width="2" />
+  <text x="400" y="235" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">DelayMS(200)</text>
+  
+  <!-- 箭头：延时 -> LCD初始化 -->
+  <line x1="400" y1="250" x2="400" y2="280" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- LCD初始化 -->
+  <rect x="300" y="280" width="200" height="40" rx="5" fill="#9C27B0" stroke="#7B1FA2" stroke-width="2" />
+  <text x="400" y="305" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">LCD_Init()</text>
+  
+  <!-- 箭头：LCD初始化 -> 关闭报警 -->
+  <line x1="400" y1="320" x2="400" y2="350" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 关闭报警 -->
+  <rect x="300" y="350" width="200" height="40" rx="5" fill="#607D8B" stroke="#455A64" stroke-width="2" />
+  <text x="400" y="375" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">ALARM_SIG = 0</text>
+  
+  <!-- 箭头：关闭报警 -> 判断仿真模式 -->
+  <line x1="400" y1="390" x2="400" y2="420" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 判断仿真模式 -->
+  <polygon points="400,420 500,460 400,500 300,460" fill="#FFC107" stroke="#FFA000" stroke-width="2" />
+  <text x="400" y="465" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="#333">SIMULATION_MODE?</text>
+  
+  <!-- 箭头：判断 -> 是 -->
+  <line x1="500" y1="460" x2="600" y2="460" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  <text x="550" y="450" font-family="SimSun, Arial" font-size="10" text-anchor="middle" fill="#333">是</text>
+  
+  <!-- 箭头：判断 -> 否 -->
+  <line x1="400" y1="500" x2="400" y2="530" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  <text x="410" y="520" font-family="SimSun, Arial" font-size="10" text-anchor="start" fill="#333">否</text>
+  
+  <!-- UART初始化 -->
+  <rect x="600" y="440" width="150" height="40" rx="5" fill="#795548" stroke="#5D4037" stroke-width="2" />
+  <text x="675" y="465" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">UART_Init()</text>
+  
+  <!-- 箭头：UART初始化 -> 显示初始化 -->
+  <line x1="675" y1="480" x2="675" y2="530" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="675" y1="530" x2="400" y2="530" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 显示初始化 -->
+  <rect x="250" y="530" width="300" height="40" rx="5" fill="#E91E63" stroke="#C2185B" stroke-width="2" />
+  <text x="400" y="555" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">LCD_ShowString("System Init...")</text>
+  
+  <!-- 箭头：显示初始化 -> 延时500ms -->
+  <line x1="400" y1="570" x2="400" y2="600" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 延时500ms -->
+  <rect x="300" y="600" width="200" height="40" rx="5" fill="#FF9800" stroke="#F57C00" stroke-width="2" />
+  <text x="400" y="625" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">DelayMS(500)</text>
+  
+  <!-- 箭头：延时500ms -> 清屏 -->
+  <line x1="400" y1="640" x2="400" y2="670" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 清屏 -->
+  <rect x="300" y="670" width="200" height="40" rx="5" fill="#00BCD4" stroke="#0097A7" stroke-width="2" />
+  <text x="400" y="695" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">LCD_WriteCmd(0x01) // 清屏</text>
+  
+  <!-- 箭头：清屏 -> while循环 -->
+  <line x1="400" y1="710" x2="400" y2="740" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- while循环开始 -->
+  <ellipse cx="400" cy="760" rx="80" ry="30" fill="#4CAF50" stroke="#388E3C" stroke-width="2" />
+  <text x="400" y="765" font-family="SimSun, Arial" font-size="14" text-anchor="middle" fill="white">while(1)</text>
+  
+  <!-- 箭头：while循环 -> 读取温度 -->
+  <line x1="400" y1="790" x2="400" y2="820" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 读取温度 -->
+  <rect x="250" y="820" width="300" height="40" rx="5" fill="#3F51B5" stroke="#303F9F" stroke-width="2" />
+  <text x="400" y="845" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">water_temp = Get_Temperature()</text>
+  
+  <!-- 箭头：读取温度 -> 读取pH和浊度 -->
+  <line x1="400" y1="860" x2="400" y2="890" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 读取pH和浊度 -->
+  <rect x="250" y="890" width="300" height="40" rx="5" fill="#3F51B5" stroke="#303F9F" stroke-width="2" />
+  <text x="400" y="915" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">adc_ph = ADC0832_Read(1,0)</text>
+  
+  <!-- 箭头：读取pH和浊度 -> 读取溶解氧 -->
+  <line x1="400" y1="930" x2="400" y2="960" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 读取溶解氧 -->
+  <rect x="250" y="960" width="300" height="40" rx="5" fill="#3F51B5" stroke="#303F9F" stroke-width="2" />
+  <text x="400" y="985" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">adc_do = ADC0832_Read(2,0)</text>
+  
+  <!-- 箭头：读取溶解氧 -> 数据换算 -->
+  <line x1="400" y1="1000" x2="400" y2="1030" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 数据换算 -->
+  <rect x="250" y="1030" width="300" height="40" rx="5" fill="#FF5722" stroke="#E64A19" stroke-width="2" />
+  <text x="400" y="1055" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">数据换算：pH, 浊度, 溶解氧</text>
+  
+  <!-- 箭头：数据换算 -> 显示数据 -->
+  <line x1="400" y1="1070" x2="400" y2="1100" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 显示数据 -->
+  <rect x="250" y="1100" width="300" height="40" rx="5" fill="#009688" stroke="#00796B" stroke-width="2" />
+  <text x="400" y="1125" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">LCD显示：温度, pH, 浊度, 溶解氧</text>
+  
+  <!-- 箭头：显示数据 -> 阈值判断 -->
+  <line x1="400" y1="1140" x2="400" y2="1170" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 阈值判断 -->
+  <polygon points="400,1170 500,1210 400,1250 300,1210" fill="#FFC107" stroke="#FFA000" stroke-width="2" />
+  <text x="400" y="1215" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="#333">阈值判断</text>
+  
+  <!-- 箭头：阈值判断 -> 是 -->
+  <line x1="500" y1="1210" x2="600" y2="1210" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  <text x="550" y="1200" font-family="SimSun, Arial" font-size="10" text-anchor="middle" fill="#333">是</text>
+  
+  <!-- 箭头：阈值判断 -> 否 -->
+  <line x1="400" y1="1250" x2="400" y2="1280" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  <text x="410" y="1270" font-family="SimSun, Arial" font-size="10" text-anchor="start" fill="#333">否</text>
+  
+  <!-- 触发报警 -->
+  <rect x="600" y="1190" width="150" height="40" rx="5" fill="#F44336" stroke="#D32F2F" stroke-width="2" />
+  <text x="675" y="1215" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">ALARM_SIG = 1</text>
+  
+  <!-- 箭头：触发报警 -> 延时 -->
+  <line x1="675" y1="1230" x2="675" y2="1280" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="675" y1="1280" x2="400" y2="1280" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 延时50ms -->
+  <rect x="300" y="1280" width="200" height="40" rx="5" fill="#FF9800" stroke="#F57C00" stroke-width="2" />
+  <text x="400" y="1305" font-family="SimSun, Arial" font-size="12" text-anchor="middle" fill="white">DelayMS(50)</text>
+  
+  <!-- 箭头：延时50ms -> while循环 -->
+  <line x1="400" y1="1320" x2="400" y2="1350" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="400" y1="1350" x2="400" y2="1380" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 返回循环 -->
+  <path d="M400,1380 L400,1400 L200,1400 L200,760 L320,760" fill="none" stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 注释 -->
+  <text x="200" y="1420" font-family="SimSun, Arial" font-size="10" fill="#666">注：主循环每50ms执行一次，包含传感器数据采集、处理、显示和报警判断</text>
+</svg>

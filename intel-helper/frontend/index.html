@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>率土战报情报库</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="nav-brand">率土战报情报库</div>
+            <div class="nav-links">
+                <button class="nav-btn active" data-page="upload">上传战报</button>
+                <button class="nav-btn" data-page="search">搜索玩家</button>
+                <button class="nav-btn" data-page="heroes">武将库</button>
+                <button class="nav-btn" data-page="teams">玩家队伍</button>
+            </div>
+        </nav>
+
+        <!-- 页面1: 上传战报 -->
+        <section id="page-upload" class="page active">
+            <div class="page-header">
+                <h2>上传战报截图</h2>
+            </div>
+
+            <div class="upload-section">
+                <div class="upload-box" id="upload-box">
+                    <div class="upload-placeholder">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p>点击或拖拽上传战报截图</p>
+                        <p class="upload-hint">支持 JPG, PNG, GIF, WebP，最大 10MB</p>
+                    </div>
+                    <input type="file" id="file-input" accept="image/*" hidden>
+                </div>
+
+                <div class="form-group">
+                    <label for="season-input">赛季</label>
+                    <input type="text" id="season-input" placeholder="S1, S2, C1..." value="S3">
+                </div>
+
+                <button id="btn-upload" class="btn btn-primary" disabled>上传并识别</button>
+            </div>
+
+            <!-- OCR 结果展示 -->
+            <div id="ocr-result" class="result-section" style="display: none;">
+                <div class="result-header">
+                    <h3>OCR 识别结果 <span class="ocr-hint">(仅供参考，请手动确认)</span></h3>
+                    <div class="confidence-badge" id="confidence-badge">置信度: 0%</div>
+                </div>
+
+                <div class="result-content">
+                    <div class="image-preview">
+                        <img id="preview-image" src="" alt="战报预览">
+                    </div>
+
+                    <div class="ocr-text">
+                        <h4>原始识别文本 <span class="ocr-hint">(识别不准确请手动输入)</span></h4>
+                        <pre id="raw-ocr-text"></pre>
+                    </div>
+
+                    <div class="suggested-data">
+                        <h4>请手动确认以下信息</h4>
+                        <div class="suggestion-item">
+                            <label>玩家名 *:</label>
+                            <input type="text" id="suggest-player" placeholder="请输入玩家名" required>
+                        </div>
+                        <div class="suggestion-item">
+                            <label>同盟名:</label>
+                            <input type="text" id="suggest-alliance" placeholder="请输入同盟名">
+                        </div>
+                        <div class="suggestion-item">
+                            <label>武将 *:</label>
+                            <div id="suggest-heroes" class="heroes-tags"></div>
+                            <small class="ocr-hint">点击标签移除，未识别到请手动添加</small>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="btn-confirm" class="btn btn-success">确认并保存</button>
+            </div>
+        </section>
+
+        <!-- 页面2: 搜索玩家 -->
+        <section id="page-search" class="page">
+            <div class="page-header">
+                <h2>搜索玩家</h2>
+            </div>
+
+            <div class="search-section">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="输入玩家名搜索...">
+                    <select id="search-season">
+                        <option value="">所有赛季</option>
+                    </select>
+                    <button id="btn-search" class="btn btn-primary">搜索</button>
+                </div>
+
+                <!-- 所有玩家下拉菜单 -->
+                <div class="all-players-dropdown">
+                    <button id="btn-all-players" class="btn btn-secondary">
+                        📋 所有玩家 <span id="players-count"></span>
+                    </button>
+                    <div id="all-players-panel" class="dropdown-panel">
+                        <div class="dropdown-header">
+                            <input type="text" id="players-filter" placeholder="筛选玩家...">
+                        </div>
+                        <div id="all-players-list" class="dropdown-list"></div>
+                    </div>
+                </div>
+
+                <div id="search-results" class="results-list"></div>
+            </div>
+        </section>
+
+        <!-- 页面3: 玩家详情 -->
+        <section id="page-player" class="page">
+            <div class="page-header">
+                <button class="btn-back" onclick="showPage('search')">&larr; 返回搜索</button>
+                <h2>玩家详情</h2>
+            </div>
+
+            <div id="player-info" class="player-info"></div>
+            <div id="player-teams" class="teams-list"></div>
+        </section>
+
+        <!-- 页面4: 武将库 -->
+        <section id="page-heroes" class="page">
+            <div class="page-header">
+                <h2>武将库</h2>
+                <div class="heroes-stats" id="heroes-stats"></div>
+                <button id="btn-add-hero" class="btn btn-primary" onclick="showHeroForm()">+ 添加武将</button>
+            </div>
+
+            <div class="heroes-section">
+                <div class="search-box">
+                    <input type="text" id="hero-search-input" placeholder="搜索武将名称、阵营或标签...">
+                    <select id="hero-camp-filter">
+                        <option value="">全部阵营</option>
+                        <option value="魏">魏国</option>
+                        <option value="蜀">蜀国</option>
+                        <option value="吴">吴国</option>
+                        <option value="群">群雄</option>
+                    </select>
+                    <select id="hero-skill-filter">
+                        <option value="">全部武将</option>
+                        <option value="has-skill">有战法</option>
+                        <option value="has-image">有截图</option>
+                    </select>
+                </div>
+                <div id="heroes-list" class="heroes-grid"></div>
+            </div>
+        </section>
+
+        <!-- 页面5: 玩家队伍 -->
+        <section id="page-teams" class="page">
+            <div class="page-header">
+                <h2>玩家队伍数据库</h2>
+                <div class="teams-stats" id="teams-stats"></div>
+                <button id="btn-add-team" class="btn btn-primary" onclick="showTeamForm()">+ 添加队伍</button>
+            </div>
+
+            <div class="teams-section">
+                <div class="search-box">
+                    <input type="text" id="team-search-input" placeholder="搜索玩家ID或队伍名称...">
+                    <button id="btn-refresh-teams" class="btn btn-secondary">刷新</button>
+                </div>
+                <div id="teams-list" class="teams-grid"></div>
+            </div>
+        </section>
+
+        <!-- 武将编辑弹窗 -->
+        <div id="hero-form-modal" class="modal">
+            <div class="modal-content modal-medium">
+                <div class="modal-header">
+                    <h3 id="hero-form-title">添加武将</h3>
+                    <button class="modal-close" onclick="closeHeroForm()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="hero-form">
+                        <input type="hidden" id="hero-form-id">
+                        <div class="form-group">
+                            <label>武将名称 *</label>
+                            <input type="text" id="hero-name" required placeholder="请输入武将名称">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>阵营</label>
+                                <select id="hero-camp">
+                                    <option value="">请选择</option>
+                                    <option value="魏">魏国</option>
+                                    <option value="蜀">蜀国</option>
+                                    <option value="吴">吴国</option>
+                                    <option value="群">群雄</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>兵种</label>
+                                <select id="hero-troop-type">
+                                    <option value="">请选择</option>
+                                    <option value="步兵">步兵</option>
+                                    <option value="骑兵">骑兵</option>
+                                    <option value="弓兵">弓兵</option>
+                                    <option value="器械">器械</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>攻击</label>
+                                <input type="number" id="hero-attack" placeholder="0-100">
+                            </div>
+                            <div class="form-group">
+                                <label>防御</label>
+                                <input type="number" id="hero-defense" placeholder="0-100">
+                            </div>
+                            <div class="form-group">
+                                <label>速度</label>
+                                <input type="number" id="hero-speed" placeholder="0-100">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>标签 (多个用逗号分隔)</label>
+                            <input type="text" id="hero-tags" placeholder="如: 四星,主动,物理">
+                        </div>
+                        <div class="form-divider"></div>
+                        <h4>主战法</h4>
+                        <div class="form-group">
+                            <label>战法名称</label>
+                            <input type="text" id="hero-skill-name" placeholder="请输入战法名称">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>战法类型</label>
+                                <select id="hero-skill-type">
+                                    <option value="">请选择</option>
+                                    <option value="主动">主动</option>
+                                    <option value="被动">被动</option>
+                                    <option value="指挥">指挥</option>
+                                    <option value="典藏">典藏</option>
+                                    <option value="追击">追击</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>发动概率 (%)</label>
+                                <input type="number" id="hero-skill-rate" min="0" max="100" placeholder="0-100">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>战法描述</label>
+                            <textarea id="hero-skill-desc" rows="3" placeholder="请输入战法描述"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="closeHeroForm()">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 队伍编辑弹窗 -->
+        <div id="team-form-modal" class="modal">
+            <div class="modal-content modal-medium">
+                <div class="modal-header">
+                    <h3 id="team-form-title">添加队伍</h3>
+                    <button class="modal-close" onclick="closeTeamForm()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="team-form">
+                        <input type="hidden" id="team-form-id">
+                        <div class="form-group">
+                            <label>玩家ID *</label>
+                            <input type="text" id="team-player-id" required placeholder="请输入玩家ID">
+                        </div>
+                        <div class="form-group">
+                            <label>队伍名称 *</label>
+                            <input type="text" id="team-name" required placeholder="请输入队伍名称">
+                        </div>
+                        <div class="form-group">
+                            <label>武将阵容 (最多5个，用逗号分隔)</label>
+                            <textarea id="team-heroes" rows="3" placeholder="如: 张飞,马超,赵云"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>等级</label>
+                            <input type="number" id="team-level" min="1" max="100" value="1" placeholder="1-100">
+                        </div>
+                        <div class="form-group">
+                            <label>备注</label>
+                            <textarea id="team-notes" rows="2" placeholder="可选备注"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="closeTeamForm()">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 队伍详情弹窗 -->
+        <div id="team-detail-modal" class="modal">
+            <div class="modal-content modal-medium">
+                <div class="modal-header">
+                    <h3 id="team-detail-title">队伍详情</h3>
+                    <button class="modal-close" onclick="closeTeamDetail()">&times;</button>
+                </div>
+                <div class="modal-body" id="team-detail-content"></div>
+            </div>
+        </div>
+
+        <!-- 确认弹窗 -->
+        <div id="confirm-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>确认情报</h3>
+                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>玩家名 *</label>
+                        <input type="text" id="confirm-player-name" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>同盟</label>
+                            <input type="text" id="confirm-alliance">
+                        </div>
+                        <div class="form-group">
+                            <label>区服</label>
+                            <input type="text" id="confirm-server">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>赛季 *</label>
+                        <input type="text" id="confirm-season" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>敌方位置</label>
+                            <select id="confirm-enemy-side">
+                                <option value="unknown">未知</option>
+                                <option value="left">左侧</option>
+                                <option value="right">右侧</option>
+                                <option value="top">上方</option>
+                                <option value="bottom">下方</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>战报结果</label>
+                            <select id="confirm-battle-result">
+                                <option value="unknown">未知</option>
+                                <option value="win">胜利</option>
+                                <option value="loss">失败</option>
+                                <option value="draw">平局</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>队伍武将 (3人)</label>
+                        <div class="heroes-input-group">
+                            <input type="text" class="hero-input" id="hero-1" placeholder="武将1">
+                            <input type="text" class="hero-input" id="hero-2" placeholder="武将2">
+                            <input type="text" class="hero-input" id="hero-3" placeholder="武将3">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>备注</label>
+                        <textarea id="confirm-notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button class="btn btn-success" id="btn-save-confirm">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 克制分析弹窗 -->
+        <div id="counter-modal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3>克制分析</h3>
+                    <button class="modal-close" onclick="closeCounterModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="counter-result"></div>
+            </div>
+        </div>
+
+        <!-- Toast 提示 -->
+        <div id="toast" class="toast"></div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "export_time": "2026-04-27T00:30:00.888476",
+  "database_path": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\data\\intel.db",
+  "export_directory": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\exports\\2026-04-27_003000",
+  "tables": {
+    "hero": {
+      "exists": true,
+      "count": 122,
+      "json_exported": true,
+      "json_path": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\exports\\2026-04-27_003000\\hero.json",
+      "csv_exported": true,
+      "csv_path": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\exports\\2026-04-27_003000\\hero.csv"
+    },
+    "player": {
+      "exists": true,
+      "count": 0,
+      "json_exported": true,
+      "json_path": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\exports\\2026-04-27_003000\\player.json",
+      "csv_exported": true,
+      "csv_path": null
+    },
+    "intel_snapshot": {
+      "exists": true,
+      "count": 1,
+      "json_exported": true,
+      "json_path": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\exports\\2026-04-27_003000\\intel_snapshot.json",
+      "csv_exported": true,
+      "csv_path": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\exports\\2026-04-27_003000\\intel_snapshot.csv"
+    },
+    "observed_team": {
+      "exists": true,
+      "count": 0,
+      "json_exported": true,
+      "json_path": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\exports\\2026-04-27_003000\\observed_team.json",
+      "csv_exported": true,
+      "csv_path": null
+    },
+    "player_team": {
+      "exists": true,
+      "count": 0,
+      "json_exported": true,
+      "json_path": "C:\\Users\\27557\\Documents\\New project\\intel-helper\\exports\\2026-04-27_003000\\player_team.json",
+      "csv_exported": true,
+      "csv_path": null
+    }
+  },
+  "total_records": 123,
+  "success": true,
+  "error": null
+}

@@ -1,0 +1,39 @@
+<view class="container">
+  <!-- 搜索 -->
+  <view class="card search-card">
+    <input class="input search-input" placeholder="搜索武将名称" 
+           value="{{searchKey}}" bindinput="onSearchInput" />
+  </view>
+  
+  <!-- 阵营筛选 -->
+  <view class="filter-tabs">
+    <text wx:for="{{camps}}" wx:key="index" 
+          class="tab-item {{currentCamp === item ? 'active' : ''}}"
+          bindtap="filterByCamp" data-camp="{{item}}">
+      {{item}}
+    </text>
+  </view>
+  
+  <!-- 武将列表 -->
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+  
+  <view wx:elif="{{filteredHeroes.length > 0}}" class="heroes-grid">
+    <view wx:for="{{filteredHeroes}}" wx:key="id" class="hero-card" 
+          bindtap="viewHeroDetail" data-id="{{item.id}}">
+      <view class="hero-avatar" style="background: {{getCampColor(item.camp)}}">
+        <text class="hero-name-first">{{item.name[0]}}</text>
+      </view>
+      <view class="hero-info">
+        <text class="hero-name">{{item.name}}</text>
+        <view class="hero-tags">
+          <text class="camp-tag" style="background: {{getCampColor(item.camp)}}">{{item.camp || '群'}}</text>
+          <text class="type-tag">{{item.troop_type || '步兵'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <view wx:else class="empty-state">
+    <text>未找到武将</text>
+  </view>
+</view>
