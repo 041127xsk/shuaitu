@@ -12,7 +12,6 @@ import {
     GetTask, DeleteTaskReport
 } from '../../wailsjs/go/main/App'
 import { formatTimestampMs, splitwid } from '@/utils/format'
-import * as XLSX from 'xlsx'
 import { Plus, RefreshCw, Eye, Play, Trash2, Eraser } from 'lucide-vue-next'
 
 const nmessage = useMessage()
@@ -176,7 +175,8 @@ const getTaskDetail = (id) => {
     })
 }
 
-const exportExcel = () => {
+const exportExcel = async () => {
+    const XLSX = await import('xlsx')
     let data = []
     data.push(['名字', '分组', '主力', '拆迁', '主力次数', '拆迁次数'])
     Object.values(taskDetail.value.user_list).forEach((v: any) => {

@@ -3,7 +3,6 @@ import { ref, computed, onMounted } from 'vue'
 import { NCard, NButton, NSpace, NTag, NInput, NEmpty, NGrid, NGi, useMessage, useDialog } from 'naive-ui'
 import { GetTeamUser } from '../../wailsjs/go/main/App'
 import { formatTimestamp, splitwid } from '@/utils/format'
-import * as XLSX from 'xlsx'
 import { Search, RefreshCw, Download, UserPlus } from 'lucide-vue-next'
 
 const dialog = useDialog()
@@ -44,7 +43,8 @@ function getUserList() {
     })
 }
 
-const exportExcel = () => {
+const exportExcel = async () => {
+    const XLSX = await import('xlsx')
     let data = []
     data.push(['名字', '分组', '势力', '本周武勋', '总贡献', '周贡献', '位置', '进盟时间'])
     Object.values(teamUsers.value).forEach(v => {

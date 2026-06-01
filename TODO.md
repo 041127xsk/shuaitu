@@ -145,6 +145,14 @@
 - `frontend/src/pages/Logs.vue` 与 `frontend/src/styles/variables.scss`：日志区使用 `--log-bg` / `--log-text` 等变量，修复浅色模式文字看不清。
 - `app_autoscroll_test.go`：覆盖重复战报开关与前端日志写入。
 
+## ~~P2-6 stzb-helper-v2 队伍查询性能与前端首包优化~~ ✅ 已完成 (2026-06-02)
+- `GetPlayerTeam`：候选队伍只查一次，Go 层完成有效队伍去重、旧队伍替换、分页和总数计算。
+- `player_team_query.go` / `player_team_query_test.go`：新增可测的队伍过滤、共享武将替换和分页逻辑。
+- `model/database.go`：新增队伍查询复合索引，提升大库筛选与时间排序性能。
+- `frontend/src/routes.ts`：全站页面路由懒加载，主入口 JS 从约 1.37 MB 降到约 460 KB。
+- `TeamQuery.vue` / `TeamUser.vue` / `Task.vue`：`xlsx` 改为点击导出时动态加载，导出库不再进入首包。
+- `frontend/src/styles/global.scss`：移除不存在的字体文件引用，构建不再出现字体路径警告。
+
 ## P2-1 增加 README 和示例命令
 背景：
 当前仓库没有项目总说明，新人上手时只能依赖交接文档。

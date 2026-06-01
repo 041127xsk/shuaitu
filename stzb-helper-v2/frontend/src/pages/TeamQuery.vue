@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import { NCard, NButton, NInput, NEmpty, NSpin, NTag, NPagination, useMessage, NGrid, NGi } from 'naive-ui'
 import { GetPlayerTeam, GetTeamWinRateByTeam } from '../../wailsjs/go/main/App'
 import { Search, Swords, Star, Filter, Download } from 'lucide-vue-next'
-import * as XLSX from 'xlsx'
 import { herocfg, skillcfg } from '../cfg'
 
 const heroMap = JSON.parse(herocfg)
@@ -51,7 +50,7 @@ const doExport = async () => {
     // 分页查询所有数据
     let allList = []
     let page = 1
-    const pageSize = 200
+    const pageSize = 1000
     let hasMore = true
 
     try {
@@ -77,6 +76,7 @@ const doExport = async () => {
             exporting.value = false
             return
         }
+        const XLSX = await import('xlsx')
 
         // 获取武将完整信息：红度\n等级\n名字-国家-兵种
         const getHeroInfo = (id, star, level) => {

@@ -1,16 +1,17 @@
 import { createRouter, createWebHashHistory, type RouteLocationNormalized, type NavigationGuardNext } from 'vue-router'
-import Index from './pages/Index.vue'
-import TeamUser from './pages/TeamUser.vue'
-import Task from './pages/Task.vue'
-import GroupWu from './pages/GroupWu.vue'
-import SelectDb from './pages/SelectDb.vue'
-import Logs from './pages/Logs.vue'
-import NpcapHelp from './pages/NpcapHelp.vue'
-import Debug from './pages/Debug.vue'
-import TeamQuery from './pages/TeamQuery.vue'
-import Book from './pages/Book.vue'
-import TeamWinRate from './pages/TeamWinRate.vue'
 import { CheckNpcap } from '../wailsjs/go/main/App'
+
+const Index = () => import('./pages/Index.vue')
+const TeamUser = () => import('./pages/TeamUser.vue')
+const Task = () => import('./pages/Task.vue')
+const GroupWu = () => import('./pages/GroupWu.vue')
+const SelectDb = () => import('./pages/SelectDb.vue')
+const Logs = () => import('./pages/Logs.vue')
+const NpcapHelp = () => import('./pages/NpcapHelp.vue')
+const Debug = () => import('./pages/Debug.vue')
+const TeamQuery = () => import('./pages/TeamQuery.vue')
+const Book = () => import('./pages/Book.vue')
+const TeamWinRate = () => import('./pages/TeamWinRate.vue')
 
 const routes = [
     {
