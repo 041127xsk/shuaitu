@@ -336,12 +336,10 @@ func parseBattleData(data []byte) {
 				log.Printf("保存战斗报告失败: %v", result.Error)
 			} else if result.RowsAffected == 0 {
 				log.Printf("检测到重复战报 (battle_id=%d)", report.BattleId)
-				autoScrollDuplicateFound = true
+				markAutoScrollDuplicate(report.BattleId)
 			} else {
 				battleCount++
-				if report.BattleId > autoScrollLastBattleId {
-					autoScrollLastBattleId = report.BattleId
-				}
+				recordAutoScrollBattleID(report.BattleId)
 				fmt.Printf("成功保存战斗报告, ID: %d\n", report.BattleId)
 			}
 		}

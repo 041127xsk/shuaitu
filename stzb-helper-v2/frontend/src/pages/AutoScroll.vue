@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { NCard, NButton, NInput, NInputNumber, NSpace, NTag, NProgress, NAlert, NSpin, NEmpty, useMessage } from 'naive-ui'
+import { NCard, NButton, NInput, NInputNumber, NSpace, NTag, NProgress, NAlert, NSpin, NEmpty, NSwitch, useMessage } from 'naive-ui'
 import { LoadConfig, SaveConfig, CheckAdbConnection, GetAutoScrollStatus, StartAutoScroll, StopAutoScroll } from '../../wailsjs/go/main/App'
 import { RefreshCw, Wifi, WifiOff, Play, Square, Save, Monitor } from 'lucide-vue-next'
 
@@ -11,7 +11,8 @@ const config = ref({
     adb_serial: '',
     scroll_count: 8000,
     scroll_delay: 100,
-    scroll_duration: 100
+    scroll_duration: 100,
+    stop_on_duplicate: false
 })
 
 const defaultConfig = { ...config.value }
@@ -20,7 +21,7 @@ const loading = ref(false)
 const checking = ref(false)
 const adbConnected = ref(false)
 const screenSize = ref('未知')
-const status = ref({ running: false, current: 0, total: 0, screen_width: 1080, screen_height: 1920 })
+const status = ref({ running: false, current: 0, total: 0, screen_width: 1080, screen_height: 1920, stop_reason: '', duplicate_found: false, stop_on_duplicate: false })
 const logs = ref([])
 const starting = ref(false)
 let statusTimer = null
@@ -48,7 +49,8 @@ const loadConfig = () => {
                 adb_serial: typeof resp.data.adb_serial === 'string' ? resp.data.adb_serial : defaultConfig.adb_serial,
                 scroll_count: typeof resp.data.scroll_count === 'number' ? resp.data.scroll_count : defaultConfig.scroll_count,
                 scroll_delay: typeof resp.data.scroll_delay === 'number' ? resp.data.scroll_delay : defaultConfig.scroll_delay,
-                scroll_duration: typeof resp.data.scroll_duration === 'number' ? resp.data.scroll_duration : defaultConfig.scroll_duration
+                scroll_duration: typeof resp.data.scroll_duration === 'number' ? resp.data.scroll_duration : defaultConfig.scroll_duration,
+                stop_on_duplicate: typeof resp.data.stop_on_duplicate === 'boolean' ? resp.data.stop_on_duplicate : defaultConfig.stop_on_duplicate
             }
             addLog('配置已加载')
         } else {
@@ -136,7 +138,8 @@ const startScroll = () => {
         adb_serial: config.value.adb_serial || '',
         count: Number(config.value.scroll_count) || 5000,
         delay: Number(config.value.scroll_delay) || 100,
-        duration: Number(config.value.scroll_duration) || 100
+        duration: Number(config.value.scroll_duration) || 100,
+        stop_on_duplicate: !!config.value.stop_on_duplicate
     })).then(v => {
         let resp = JSON.parse(v)
         if (resp.code == 200) {
@@ -303,6 +306,9 @@ onUnmounted(() => {
                                     {{ status.current }} / {{ status.total }} 次
                                 </span>
                             </div>
+                            <div v-if="!status.running && status.stop_reason" class="stop-reason">
+                                {{ status.stop_reason }}
+                            </div>
                             <n-progress
                                 v-if="status.running"
                                 type="line"
@@ -311,6 +317,10 @@ onUnmounted(() => {
                             />
                         </div>
                         <div class="control-buttons">
+                            <div class="duplicate-toggle">
+                                <span>重复战报自动停</span>
+                                <n-switch v-model:value="config.stop_on_duplicate" :disabled="status.running" />
+                            </div>
                             <n-button
                                 v-if="!status.running"
                                 type="primary"
@@ -381,6 +391,16 @@ onUnmounted(() => {
         font-size: 14px;
         color: var(--color-text-secondary);
         margin: 0;
+    }
+    .stop-reason {
+        margin-bottom: 12px;
+        padding: 8px 10px;
+        border: 1px solid var(--color-border-light);
+        border-radius: 8px;
+        background: var(--color-surface-hover);
+        color: var(--color-text);
+        font-size: 13px;
+        line-height: 1.5;
     }
 }
 
@@ -466,9 +486,24 @@ onUnmounted(() => {
 
 .control-buttons {
     display: flex;
+    align-items: center;
     justify-content: center;
     gap: 16px;
     margin-bottom: 16px;
+}
+
+.duplicate-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+    font-size: 13px;
+    white-space: nowrap;
 }
 
 .log-card {
@@ -485,6 +520,9 @@ onUnmounted(() => {
 .log-container {
     height: 100%;
     overflow: hidden;
+    background: var(--log-bg);
+    border: 1px solid var(--log-border);
+    border-radius: 8px;
     .log-empty {
         display: flex;
         align-items: center;
@@ -498,8 +536,9 @@ onUnmounted(() => {
         font-family: monospace;
         font-size: 12px;
         line-height: 1.8;
+        background: transparent;
         .log-item {
-            color: var(--color-text);
+            color: var(--log-text);
             word-break: break-all;
         }
     }

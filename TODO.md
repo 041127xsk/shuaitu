@@ -137,6 +137,14 @@
 
 ## P2 可选优化
 
+## ~~P2-5 stzb-helper-v2 自动翻页重复战报开关与日志浅色修复~~ ✅ 已完成 (2026-06-01)
+- `app.go`：重复战报默认只记录最后处理到的 `battle_id` 并继续翻页；新增 `stop_on_duplicate` 开关，打开后才自动停止。
+- `parse.go`：新增统一记录函数，重复战报和新增战报都会更新本次最后战报 ID。
+- `frontend/src/pages/AutoScroll.vue`：翻页控制旁新增“重复战报自动停”开关，随配置保存；日志区使用独立日志主题色。
+- `frontend/src/pages/Index.vue`：首页自动翻页面板新增“重复自动停”开关。
+- `frontend/src/pages/Logs.vue` 与 `frontend/src/styles/variables.scss`：日志区使用 `--log-bg` / `--log-text` 等变量，修复浅色模式文字看不清。
+- `app_autoscroll_test.go`：覆盖重复战报开关与前端日志写入。
+
 ## P2-1 增加 README 和示例命令
 背景：
 当前仓库没有项目总说明，新人上手时只能依赖交接文档。

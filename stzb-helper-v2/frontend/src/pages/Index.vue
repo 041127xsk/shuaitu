@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { NCard, NButton, NStatistic, NSpace, NGrid, NGi, NAlert, NSpin, useMessage, NTag, NEmpty, NProgress, NInputNumber } from 'naive-ui'
+import { NCard, NButton, NStatistic, NSpace, NGrid, NGi, NAlert, NSpin, useMessage, NTag, NEmpty, NProgress, NInputNumber, NSwitch } from 'naive-ui'
 import { EnableGetBattleReport, DisableGetBattleReport, GetTaskList, GetTeamUser, CheckUpdate, GetVersion, GetGroupWu, GetDbList, GetAutoScrollStatus, StartAutoScroll, StopAutoScroll, CheckAdbConnection, AutoConnectDb } from '../../wailsjs/go/main/App'
 import { BrowserOpenURL } from '../../wailsjs/runtime/runtime'
 import { RefreshCw, Download, Users, Swords, ClipboardList, BarChart3, BookOpen, Search, TrendingUp, Trophy, Clock } from 'lucide-vue-next'
@@ -18,10 +18,11 @@ const dbName = ref('')
 const groupWuData = ref([])
 const recentMembers = ref([])
 
-const autoScrollStatus = ref({ running: false, current: 0, total: 0, screen_width: 1080, screen_height: 1920 })
+const autoScrollStatus = ref({ running: false, current: 0, total: 0, screen_width: 1080, screen_height: 1920, stop_reason: '', duplicate_found: false, stop_on_duplicate: false })
 const scrollCount = ref(8000)
 const scrollDelay = ref(100)
 const scrollDuration = ref(100)
+const scrollStopOnDuplicate = ref(false)
 const adbConnected = ref(false)
 let statusTimer = null
 
@@ -91,7 +92,7 @@ const onStartAutoScroll = () => {
         nmessage.warning('ADB未连接，请先检查连接')
         return
     }
-    StartAutoScroll(JSON.stringify({adb_path: '', adb_serial: '', count: scrollCount.value, delay: scrollDelay.value, duration: scrollDuration.value})).then(v => {
+    StartAutoScroll(JSON.stringify({adb_path: '', adb_serial: '', count: scrollCount.value, delay: scrollDelay.value, duration: scrollDuration.value, stop_on_duplicate: scrollStopOnDuplicate.value})).then(v => {
         let data = JSON.parse(v)
         if (data.code == 200) {
             nmessage.success(data.msg)
@@ -328,9 +329,16 @@ onMounted(() => {
                                 <span class="config-label">时长(ms)</span>
                                 <n-input-number v-model:value="scrollDuration" :min="50" :max="1000" size="small" style="width: 80px" :disabled="autoScrollStatus.running" />
                             </div>
+                            <div class="config-item duplicate-config">
+                                <span class="config-label">重复自动停</span>
+                                <n-switch v-model:value="scrollStopOnDuplicate" size="small" :disabled="autoScrollStatus.running" />
+                            </div>
                         </div>
                         <div class="scroll-screen">
                             <span class="screen-info">屏幕: {{ autoScrollStatus.screen_width }}x{{ autoScrollStatus.screen_height }}</span>
+                        </div>
+                        <div v-if="!autoScrollStatus.running && autoScrollStatus.stop_reason" class="scroll-reason">
+                            {{ autoScrollStatus.stop_reason }}
                         </div>
                         <n-space>
                             <n-button size="small" @click="onCheckAdb" :disabled="autoScrollStatus.running">
@@ -569,11 +577,29 @@ onMounted(() => {
             gap: 6px;
             .config-label { font-size: 12px; color: #666; }
         }
+        .duplicate-config {
+            padding: 0 8px;
+            min-height: 28px;
+            border: 1px solid var(--color-border-light);
+            border-radius: 8px;
+            background: var(--color-surface-hover);
+        }
     }
 
     .scroll-screen {
         margin-bottom: 12px;
         .screen-info { font-size: 11px; color: #999; }
+    }
+
+    .scroll-reason {
+        margin-bottom: 12px;
+        padding: 8px 10px;
+        border: 1px solid var(--color-border-light);
+        border-radius: 8px;
+        background: var(--color-surface-hover);
+        color: var(--color-text);
+        font-size: 12px;
+        line-height: 1.5;
     }
 }
 

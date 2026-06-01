@@ -103,7 +103,8 @@ onUnmounted(() => {
 .log-container {
     max-height: calc(100vh - 200px);
     overflow-y: auto;
-    background: #1e293b;
+    background: var(--log-bg);
+    border: 1px solid var(--log-border);
     border-radius: 8px;
     padding: 16px;
     font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
@@ -115,13 +116,13 @@ onUnmounted(() => {
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    color: #e2e8f0;
+    color: var(--log-text);
     word-break: break-all;
 }
 
 .log-icon {
     flex-shrink: 0;
-    color: var(--color-text-secondary);
+    color: var(--log-text-muted);
     margin-top: 4px;
 }
 </style>

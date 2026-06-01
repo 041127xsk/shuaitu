@@ -200,6 +200,15 @@
 - `.gitignore` 已合并本地规则与远程 AL 项目规则
 - Git 身份已配置：`xieshikun <041127xsk@example.com>`
 
+## 最近一次会话进展（2026-06-01）
+- **stzb-helper-v2 自动翻页重复战报开关与日志可读性修复**：
+  - 真实项目目录 `E:\openclaw\openclaw-main\stzb-helper-v2` 已补上重复战报处理改动：默认只记录本次处理到的最后一个 `battle_id`，不再强制自动停止。
+  - 新增 `stop_on_duplicate` 启动参数和配置字段；自动翻页页与首页自动翻页面板均提供“重复战报自动停”开关，打开后才在重复战报处自动停止。
+  - `parse.go` 统一通过 `recordAutoScrollBattleID()` / `markAutoScrollDuplicate()` 记录最后战报 ID，重复战报也会写入最新 ID。
+  - `app.go` 将后端标准日志优先写入 `global.LogW`，再写 stdout，避免桌面 exe 中 stdout 不可用导致前端日志空白。
+  - 浅色/深色模式日志区新增 `--log-*` 主题变量；`Logs.vue` 和 `AutoScroll.vue` 日志文字使用独立日志文字色，修复浅色模式看不清。
+  - 新增 `app_autoscroll_test.go` 覆盖重复战报开关和 stdout 失败时前端日志仍可写入。
+
 ## 最近一次会话进展（2026-04-26）
 - 确认了 AI 抽取使用通义千问 dashscope API（`qwen/qwen3.5-flash`）。
 - AI 抽取验证结果：群吕布（4 effects，skill_type 为空）、张机（2 effects，完整数据）、赵云（3 effects，skill_type 为空）。

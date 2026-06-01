@@ -57,7 +57,7 @@ const exportExcel = () => {
     const ws = XLSX.utils.aoa_to_sheet(data)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1')
-    XLSX.writeFile(wb, `${formatTimestamp(parseInt(new Date().getTime() / 1000))}同盟成员表.xlsx`)
+    XLSX.writeFile(wb, `${formatTimestamp(Math.floor(Date.now() / 1000))}同盟成员表.xlsx`)
 }
 
 onMounted(() => {

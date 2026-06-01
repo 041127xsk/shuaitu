@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -12,10 +13,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
-	"time"
 	"stzbHelper/global"
 	"stzbHelper/model"
+	"syscall"
+	"time"
 
 	"golang.org/x/sys/windows"
 )
@@ -36,6 +37,15 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	global.AppCtx = ctx
 	global.LogW.SetContext(ctx)
+	log.SetOutput(appLogOutput(os.Stdout))
+	log.Println("日志系统已连接到前端")
+}
+
+func appLogOutput(stdout io.Writer) io.Writer {
+	if stdout == nil {
+		return global.LogW
+	}
+	return io.MultiWriter(global.LogW, stdout)
 }
 
 // Greet returns a greeting for the given name
@@ -136,7 +146,7 @@ func (a *App) ExportTeamUser() string {
 
 	log.Printf("已导出 %d 条成员数据到: %s", len(users), outputPath)
 	return global.Response{Data: map[string]interface{}{
-		"path": outputPath,
+		"path":  outputPath,
 		"count": len(users),
 	}}.Success()
 }
@@ -400,29 +410,35 @@ func (a *App) DisableGetBattleReport() string {
 
 // AutoScrollConfig 自动翻页配置
 type AutoScrollConfig struct {
-	Count       int    `json:"count"`
-	Delay       int    `json:"delay"`
-	Duration    int    `json:"duration"`
-	AdbPath     string `json:"adb_path"`
-	AdbSerial   string `json:"adb_serial"`
+	Count           int    `json:"count"`
+	Delay           int    `json:"delay"`
+	Duration        int    `json:"duration"`
+	AdbPath         string `json:"adb_path"`
+	AdbSerial       string `json:"adb_serial"`
+	StopOnDuplicate bool   `json:"stop_on_duplicate"`
 }
 
 // AutoScrollStatus 自动翻页状态
 type AutoScrollStatus struct {
-	Running     bool   `json:"running"`
-	Current     int    `json:"current"`
-	Total       int    `json:"total"`
-	ScreenWidth int    `json:"screen_width"`
-	ScreenHeight int   `json:"screen_height"`
+	Running         bool   `json:"running"`
+	Current         int    `json:"current"`
+	Total           int    `json:"total"`
+	ScreenWidth     int    `json:"screen_width"`
+	ScreenHeight    int    `json:"screen_height"`
+	StopReason      string `json:"stop_reason"`
+	DuplicateFound  bool   `json:"duplicate_found"`
+	StopOnDuplicate bool   `json:"stop_on_duplicate"`
 }
 
 var (
-	autoScrollRunning        bool
-	autoScrollCurrent        int
-	autoScrollTotal          int
-	autoScrollCancel         chan bool
-	autoScrollDuplicateFound bool
-	autoScrollLastBattleId   int64
+	autoScrollRunning         bool
+	autoScrollCurrent         int
+	autoScrollTotal           int
+	autoScrollCancel          chan bool
+	autoScrollDuplicateFound  bool
+	autoScrollLastBattleId    int64
+	autoScrollStopOnDuplicate bool
+	autoScrollStopReason      string
 )
 
 const (
@@ -433,13 +449,40 @@ const (
 // GetAutoScrollStatus 获取自动翻页状态
 func (a *App) GetAutoScrollStatus() string {
 	w, h := getScreenSize()
-	return global.Response{Data: AutoScrollStatus{
-		Running:      autoScrollRunning,
-		Current:      autoScrollCurrent,
-		Total:        autoScrollTotal,
-		ScreenWidth:  w,
-		ScreenHeight: h,
-	}}.Success()
+	return global.Response{Data: newAutoScrollStatus(w, h)}.Success()
+}
+
+func newAutoScrollStatus(w, h int) AutoScrollStatus {
+	return AutoScrollStatus{
+		Running:         autoScrollRunning,
+		Current:         autoScrollCurrent,
+		Total:           autoScrollTotal,
+		ScreenWidth:     w,
+		ScreenHeight:    h,
+		StopReason:      autoScrollStopReason,
+		DuplicateFound:  autoScrollDuplicateFound,
+		StopOnDuplicate: autoScrollStopOnDuplicate,
+	}
+}
+
+func recordAutoScrollBattleID(battleID int64) {
+	if battleID > 0 {
+		autoScrollLastBattleId = battleID
+	}
+}
+
+func markAutoScrollDuplicate(battleID int64) {
+	recordAutoScrollBattleID(battleID)
+	autoScrollDuplicateFound = true
+	if autoScrollStopOnDuplicate {
+		autoScrollStopReason = fmt.Sprintf("检测到重复战报 battle_id=%d，自动翻页已停止", battleID)
+		return
+	}
+	autoScrollStopReason = fmt.Sprintf("检测到重复战报 battle_id=%d，已记录并继续翻页", battleID)
+}
+
+func shouldStopOnDuplicate() bool {
+	return autoScrollDuplicateFound && autoScrollStopOnDuplicate
 }
 
 func getAdbPath(v interface{}) string {
@@ -475,11 +518,12 @@ func (a *App) StartAutoScroll(jsonStr string) string {
 	}
 
 	var args struct {
-		AdbPath   string `json:"adb_path"`
-		AdbSerial string `json:"adb_serial"`
-		Count     int    `json:"count"`
-		Delay     int    `json:"delay"`
-		Duration  int    `json:"duration"`
+		AdbPath         string `json:"adb_path"`
+		AdbSerial       string `json:"adb_serial"`
+		Count           int    `json:"count"`
+		Delay           int    `json:"delay"`
+		Duration        int    `json:"duration"`
+		StopOnDuplicate bool   `json:"stop_on_duplicate"`
 	}
 	if jsonStr != "" {
 		json.Unmarshal([]byte(jsonStr), &args)
@@ -490,6 +534,7 @@ func (a *App) StartAutoScroll(jsonStr string) string {
 	count := args.Count
 	delay := args.Delay
 	duration := args.Duration
+	stopOnDuplicate := args.StopOnDuplicate
 
 	if adbPath == "" {
 		adbPath = defaultConfig.AdbPath
@@ -507,17 +552,23 @@ func (a *App) StartAutoScroll(jsonStr string) string {
 		duration = defaultConfig.ScrollDuration
 	}
 
-	log.Printf("StartAutoScroll: adbPath=%s, adbSerial=%s, count=%d, delay=%d, duration=%d", adbPath, adbSerial, count, delay, duration)
+	log.Printf("StartAutoScroll: adbPath=%s, adbSerial=%s, count=%d, delay=%d, duration=%d, stopOnDuplicate=%v", adbPath, adbSerial, count, delay, duration, stopOnDuplicate)
 
 	autoScrollRunning = true
 	autoScrollCurrent = 0
 	autoScrollTotal = count
 	autoScrollDuplicateFound = false
 	autoScrollLastBattleId = 0
+	autoScrollStopOnDuplicate = stopOnDuplicate
+	autoScrollStopReason = ""
 	autoScrollCancel = make(chan bool, 1)
 
 	if lastId := readLastBattleId(); lastId > 0 {
-		log.Printf("上次翻页最后战斗ID: %d，翻页到此处将自动停止", lastId)
+		if stopOnDuplicate {
+			log.Printf("上次翻页最后战斗ID: %d，检测到重复时将自动停止", lastId)
+		} else {
+			log.Printf("上次翻页最后战斗ID: %d，本次仅记录重复战报并继续翻页", lastId)
+		}
 	}
 
 	go func() {
@@ -540,12 +591,16 @@ func (a *App) StartAutoScroll(jsonStr string) string {
 		for i := 0; i < count; i++ {
 			select {
 			case <-autoScrollCancel:
+				autoScrollStopReason = fmt.Sprintf("手动停止，已滑动 %d/%d 次", autoScrollCurrent, count)
 				log.Printf("自动翻页已停止，已滑动 %d/%d 次", autoScrollCurrent, count)
 				return
 			default:
 			}
 
-			if autoScrollDuplicateFound {
+			if shouldStopOnDuplicate() {
+				if autoScrollStopReason == "" {
+					autoScrollStopReason = fmt.Sprintf("检测到重复战报，停止翻页，已滑动 %d/%d 次", autoScrollCurrent, count)
+				}
 				log.Printf("检测到重复战报，停止翻页 (已处理 %d 条)", autoScrollCurrent)
 				return
 			}
@@ -557,6 +612,7 @@ func (a *App) StartAutoScroll(jsonStr string) string {
 				consecutiveFailures++
 				log.Printf("[%d/%d] 滑动失败 (连续失败 %d 次)", i+1, count, consecutiveFailures)
 				if consecutiveFailures >= maxConsecutiveFailures {
+					autoScrollStopReason = fmt.Sprintf("ADB 连续 %d 次滑动失败，已停止在 %d/%d 次", maxConsecutiveFailures, autoScrollCurrent, count)
 					log.Printf("连续 %d 次滑动失败，停止翻页", maxConsecutiveFailures)
 					autoScrollCurrent = i
 					return
@@ -574,6 +630,7 @@ func (a *App) StartAutoScroll(jsonStr string) string {
 			}
 		}
 
+		autoScrollStopReason = fmt.Sprintf("已完成 %d 次自动翻页", count)
 		log.Printf("自动翻页完成: 共 %d 次", count)
 	}()
 
@@ -591,6 +648,7 @@ func (a *App) StopAutoScroll() string {
 	default:
 	}
 	saveLastBattleId()
+	autoScrollStopReason = fmt.Sprintf("手动停止，当前已滑动 %d/%d 次", autoScrollCurrent, autoScrollTotal)
 	autoScrollRunning = false
 
 	return global.Response{Message: fmt.Sprintf("已停止，当前已滑动 %d 次", autoScrollCurrent)}.Success()
@@ -761,21 +819,23 @@ func (a *App) CheckAdbConnection(jsonStr string) string {
 
 // AppConfig 应用配置
 type AppConfig struct {
-	AdbPath        string `json:"adb_path"`
-	AdbSerial      string `json:"adb_serial"`
-	ScrollCount    int    `json:"scroll_count"`
-	ScrollDelay    int    `json:"scroll_delay"`
-	ScrollDuration int    `json:"scroll_duration"`
-	DatabasePath   string `json:"database_path"`
+	AdbPath         string `json:"adb_path"`
+	AdbSerial       string `json:"adb_serial"`
+	ScrollCount     int    `json:"scroll_count"`
+	ScrollDelay     int    `json:"scroll_delay"`
+	ScrollDuration  int    `json:"scroll_duration"`
+	StopOnDuplicate bool   `json:"stop_on_duplicate"`
+	DatabasePath    string `json:"database_path"`
 }
 
 var defaultConfig = AppConfig{
-	AdbPath:        `C:\Users\27557\.local\bin\platform-tools\adb.exe`,
-	AdbSerial:      "127.0.0.1:16384",
-	ScrollCount:    4000,
-	ScrollDelay:    100,
-	ScrollDuration: 100,
-	DatabasePath:   `E:\openclaw\openclaw-main\战报助手\数据库\歌丨池上#7191611_X5602.db`,
+	AdbPath:         `C:\Users\27557\.local\bin\platform-tools\adb.exe`,
+	AdbSerial:       "127.0.0.1:16384",
+	ScrollCount:     4000,
+	ScrollDelay:     100,
+	ScrollDuration:  100,
+	StopOnDuplicate: false,
+	DatabasePath:    `E:\openclaw\openclaw-main\战报助手\数据库\歌丨池上#7191611_X5602.db`,
 }
 
 func getConfigPath() string {
