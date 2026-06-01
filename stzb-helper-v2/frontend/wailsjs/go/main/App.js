@@ -86,6 +86,10 @@ export function GetPlayerTeam(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['GetPlayerTeam'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function GetPlayerTeamExport(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GetPlayerTeamExport'](arg1, arg2, arg3);
+}
+
 export function GetReportNumByTaskId(arg1) {
   return window['go']['main']['App']['GetReportNumByTaskId'](arg1);
 }

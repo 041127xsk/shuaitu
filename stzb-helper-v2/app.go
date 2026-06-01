@@ -976,6 +976,7 @@ func (a *App) CreateDb(name string) string {
 	}
 	databaseSelected = true
 	invalidatePlayerTeamQueryCache()
+	invalidateQueryCache(&teamWinRateQueryCache)
 	return global.Response{Message: "数据库创建成功"}.Success()
 }
 
@@ -1018,6 +1019,7 @@ func (a *App) SelectDb(name string) string {
 	}
 	databaseSelected = true
 	invalidatePlayerTeamQueryCache()
+	invalidateQueryCache(&teamWinRateQueryCache)
 	log.Printf("数据库连接成功: %s", dbPath)
 	return global.Response{Message: "数据库连接成功"}.Success()
 }
@@ -1091,23 +1093,41 @@ func (a *App) GetPlayerTeam(name string, uname string, idu string, page int, pag
 	}
 	pageSize = normalizePlayerTeamPageSize(pageSize)
 
-	teams, err := queryEffectivePlayerTeams(name, uname, idu)
+	teams, meta, err := queryEffectivePlayerTeamsWithMeta(name, uname, idu)
 	if err != nil {
 		return global.Response{Message: "查询失败: " + err.Error()}.Error()
 	}
 	results, total := paginatePlayerTeams(teams, page, pageSize)
 
-	log.Printf("查询玩家队伍: name=%s, union=%s, idu=%s, page=%d, total=%d, 结果=%d条", name, uname, idu, page, total, len(results))
+	log.Printf("查询玩家队伍: name=%s, union=%s, idu=%s, page=%d, total=%d, 结果=%d条, 耗时=%dms, 缓存=%t", name, uname, idu, page, total, len(results), meta.QueryMS, meta.CacheHit)
 	return global.Response{Data: map[string]interface{}{
-		"list":     results,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
+		"list":      results,
+		"total":     total,
+		"page":      page,
+		"pageSize":  pageSize,
+		"query_ms":  meta.QueryMS,
+		"cache_hit": meta.CacheHit,
+	}}.Success()
+}
+
+func (a *App) GetPlayerTeamExport(name string, uname string, idu string) string {
+	teams, meta, err := queryEffectivePlayerTeamsWithMeta(name, uname, idu)
+	if err != nil {
+		return global.Response{Message: "导出查询失败: " + err.Error()}.Error()
+	}
+
+	log.Printf("导出玩家队伍: name=%s, union=%s, idu=%s, total=%d, 耗时=%dms, 缓存=%t", name, uname, idu, len(teams), meta.QueryMS, meta.CacheHit)
+	return global.Response{Data: map[string]interface{}{
+		"list":      teams,
+		"total":     len(teams),
+		"query_ms":  meta.QueryMS,
+		"cache_hit": meta.CacheHit,
 	}}.Success()
 }
 
 // GetTeamWinRate 查询队伍胜率统计
 func (a *App) GetTeamWinRate(name string, uname string, idu string, page int, pageSize int, minLevel int, minHp int) string {
+	queryStart := time.Now()
 	type TeamWinRate struct {
 		PlayerName   string  `json:"player_name"`
 		Hero1Id      int64   `json:"hero1_id"`
@@ -1136,6 +1156,14 @@ func (a *App) GetTeamWinRate(name string, uname string, idu string, page int, pa
 	}
 	if pageSize < 1 || pageSize > 200 {
 		pageSize = 50
+	}
+
+	cacheKey := makeQueryCacheKey("player", name, uname, idu, page, pageSize, minLevel, minHp)
+	if data, ok := getCachedQueryData(&teamWinRateQueryCache, cacheKey); ok {
+		data["query_ms"] = time.Since(queryStart).Milliseconds()
+		data["cache_hit"] = true
+		log.Printf("查询队伍胜率命中缓存: name=%s, union=%s, idu=%s, page=%d", name, uname, idu, page)
+		return global.Response{Data: data}.Success()
 	}
 
 	namePattern := "%" + name + "%"
@@ -1255,16 +1283,21 @@ func (a *App) GetTeamWinRate(name string, uname string, idu string, page int, pa
 		return global.Response{Message: "查询失败: " + err.Error()}.Error()
 	}
 
-	log.Printf("查询队伍胜率: name=%s, union=%s, idu=%s, page=%d, total=%d, 结果: %d条", name, uname, idu, page, total, len(results))
-	return global.Response{Data: map[string]interface{}{
-		"list":     results,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
-	}}.Success()
+	data := map[string]interface{}{
+		"list":      results,
+		"total":     total,
+		"page":      page,
+		"pageSize":  pageSize,
+		"query_ms":  time.Since(queryStart).Milliseconds(),
+		"cache_hit": false,
+	}
+	setCachedQueryData(&teamWinRateQueryCache, cacheKey, data)
+	log.Printf("查询队伍胜率: name=%s, union=%s, idu=%s, page=%d, total=%d, 结果: %d条, 耗时=%dms", name, uname, idu, page, total, len(results), data["query_ms"])
+	return global.Response{Data: data}.Success()
 }
 
 func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page int, pageSize int, minLevel int, minHp int) string {
+	queryStart := time.Now()
 	type TeamWinRateByTeam struct {
 		Hero1Id      int64   `json:"hero1_id"`
 		Hero2Id      int64   `json:"hero2_id"`
@@ -1292,6 +1325,14 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 	}
 	if pageSize < 1 || pageSize > 200 {
 		pageSize = 50
+	}
+
+	cacheKey := makeQueryCacheKey("team", name, uname, idu, page, pageSize, minLevel, minHp)
+	if data, ok := getCachedQueryData(&teamWinRateQueryCache, cacheKey); ok {
+		data["query_ms"] = time.Since(queryStart).Milliseconds()
+		data["cache_hit"] = true
+		log.Printf("查询队伍胜率(按队伍)命中缓存: name=%s, union=%s, idu=%s, page=%d", name, uname, idu, page)
+		return global.Response{Data: data}.Success()
 	}
 
 	namePattern := "%" + name + "%"
@@ -1500,11 +1541,15 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 	}
 	pageResults := allResults[start:end]
 
-	log.Printf("查询队伍胜率(按队伍): name=%s, union=%s, idu=%s, page=%d, total=%d, 结果: %d条", name, uname, idu, page, total, len(pageResults))
-	return global.Response{Data: map[string]interface{}{
-		"list":     pageResults,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
-	}}.Success()
+	data := map[string]interface{}{
+		"list":      pageResults,
+		"total":     total,
+		"page":      page,
+		"pageSize":  pageSize,
+		"query_ms":  time.Since(queryStart).Milliseconds(),
+		"cache_hit": false,
+	}
+	setCachedQueryData(&teamWinRateQueryCache, cacheKey, data)
+	log.Printf("查询队伍胜率(按队伍): name=%s, union=%s, idu=%s, page=%d, total=%d, 结果: %d条, 耗时=%dms", name, uname, idu, page, total, len(pageResults), data["query_ms"])
+	return global.Response{Data: data}.Success()
 }

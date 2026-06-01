@@ -24,6 +24,8 @@ const groupByPlayer = ref(true)
 const page = ref(1)
 const pageSize = ref(50)
 const total = ref(0)
+const queryMs = ref<number | null>(null)
+const cacheHit = ref(false)
 
 const doSearch = (newPage?: number) => {
     if (typeof newPage === 'number') page.value = newPage
@@ -37,6 +39,8 @@ const doSearch = (newPage?: number) => {
         if (resp.code == 200) {
             results.value = resp.data.list || []
             total.value = resp.data.total || 0
+            queryMs.value = resp.data.query_ms ?? null
+            cacheHit.value = !!resp.data.cache_hit
         } else {
             nmessage.error(resp.msg)
         }
@@ -433,6 +437,8 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
             <div class="result-area" v-else-if="results.length > 0">
                 <div class="result-summary">
                     共 <strong>{{ total }}</strong> {{ groupByPlayer ? '条记录' : '支队伍' }}
+                    <span v-if="queryMs !== null">耗时 {{ queryMs }}ms</span>
+                    <span v-if="cacheHit">命中缓存</span>
                 </div>
 
                 <!-- 表格模式 -->

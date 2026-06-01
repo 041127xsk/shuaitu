@@ -49,6 +49,9 @@ func InitDB(databasePath string) {
 		"CREATE INDEX IF NOT EXISTS idx_br_defend_team_query ON battle_report(npc, defend_hp, defend_hero1_level, defend_hero2_level, defend_hero3_level, time DESC, battle_id DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_br_attack_idu_time ON battle_report(attack_idu, time DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_br_defend_idu_time ON battle_report(defend_idu, time DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_br_result_time ON battle_report(result, time DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_br_attack_winrate ON battle_report(npc, result, attack_hp, defend_hp, attack_hero1_level, attack_hero2_level, attack_hero3_level, defend_hero1_level, defend_hero2_level, defend_hero3_level)",
+		"CREATE INDEX IF NOT EXISTS idx_br_defend_winrate ON battle_report(npc, result, defend_hp, attack_hp, defend_hero1_level, defend_hero2_level, defend_hero3_level, attack_hero1_level, attack_hero2_level, attack_hero3_level)",
 	}
 	for _, sql := range indexes {
 		if err := db.Exec(sql).Error; err != nil {

@@ -153,6 +153,21 @@
 - `TeamQuery.vue` / `TeamUser.vue` / `Task.vue`：`xlsx` 改为点击导出时动态加载，导出库不再进入首包。
 - `frontend/src/styles/global.scss`：移除不存在的字体文件引用，构建不再出现字体路径警告。
 
+## ~~P2-7 stzb-helper-v2 查询耗时展示与胜率缓存~~ ✅ 已完成 (2026-06-02)
+- `GetPlayerTeamExport`：队伍查询导出改为一次性获取后端有效队伍结果，前端不再分页循环拉取。
+- `GetPlayerTeam` / `GetTeamWinRate` / `GetTeamWinRateByTeam`：返回 `query_ms` 和 `cache_hit`，页面展示查询耗时和缓存命中。
+- `query_cache.go`：新增 20 秒轻量查询缓存，数据库切换/创建和新增战报时失效。
+- `model/database.go`：新增胜率查询索引，改善大库胜率统计筛选。
+
+## P2-8 后续发布产物整理
+背景：
+`build/bin` 里已有多个历史 exe，本地调试方便但长期容易混淆。
+
+推荐实现：
+- 本地仅保留 `stzbHelper-wails.exe` 和最近一个备份 exe。
+- GitHub 使用 Releases 上传可执行文件，Git 只保存源码。
+- 在 `RUNBOOK.md` 记录发布步骤。
+
 ## P2-1 增加 README 和示例命令
 背景：
 当前仓库没有项目总说明，新人上手时只能依赖交接文档。

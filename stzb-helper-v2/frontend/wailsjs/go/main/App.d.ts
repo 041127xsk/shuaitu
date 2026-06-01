@@ -43,6 +43,8 @@ export function GetLogs():Promise<string>;
 
 export function GetPlayerTeam(arg1:string,arg2:string,arg3:string,arg4:number,arg5:number):Promise<string>;
 
+export function GetPlayerTeamExport(arg1:string,arg2:string,arg3:string):Promise<string>;
+
 export function GetReportNumByTaskId(arg1:number):Promise<string>;
 
 export function GetTask(arg1:number):Promise<string>;

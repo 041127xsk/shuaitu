@@ -341,6 +341,7 @@ func parseBattleData(data []byte) {
 				battleCount++
 				recordAutoScrollBattleID(report.BattleId)
 				invalidatePlayerTeamQueryCache()
+				invalidateQueryCache(&teamWinRateQueryCache)
 				fmt.Printf("成功保存战斗报告, ID: %d\n", report.BattleId)
 			}
 		}

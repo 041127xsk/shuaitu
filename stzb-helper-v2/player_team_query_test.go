@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestBuildEffectivePlayerTeamsReplacesOlderSharedHeroes(t *testing.T) {
 	rows := []playerTeam{
@@ -58,5 +61,44 @@ func TestPaginatePlayerTeamsUsesFilteredTotal(t *testing.T) {
 	}
 	if len(page) != 2 || page[0].BattleID != 3 || page[1].BattleID != 2 {
 		t.Fatalf("page = %+v, want battle ids 3 and 2", page)
+	}
+}
+
+func TestPaginatePlayerTeamsCanReturnAllForExport(t *testing.T) {
+	teams := []playerTeam{{BattleID: 3}, {BattleID: 2}, {BattleID: 1}}
+
+	page, total := paginatePlayerTeams(teams, 1, 0)
+
+	if total != 3 {
+		t.Fatalf("total = %d, want 3", total)
+	}
+	if len(page) != 3 {
+		t.Fatalf("len(page) = %d, want all 3 teams", len(page))
+	}
+}
+
+func TestPlayerTeamCacheReportsHit(t *testing.T) {
+	invalidatePlayerTeamQueryCache()
+	key := playerTeamQueryCacheKey("甲", "盟", "1")
+	setCachedPlayerTeams(key, []playerTeam{{BattleID: 100}})
+
+	teams, ok := getCachedPlayerTeams(key)
+
+	if !ok {
+		t.Fatal("cache hit = false, want true")
+	}
+	if len(teams) != 1 || teams[0].BattleID != 100 {
+		t.Fatalf("teams = %+v, want cached battle id 100", teams)
+	}
+}
+
+func TestNewPlayerTeamQueryMetaIncludesElapsedAndCacheHit(t *testing.T) {
+	meta := newPlayerTeamQueryMeta(time.Now().Add(-1500*time.Millisecond), true)
+
+	if !meta.CacheHit {
+		t.Fatal("CacheHit = false, want true")
+	}
+	if meta.QueryMS < 1000 {
+		t.Fatalf("QueryMS = %d, want at least 1000", meta.QueryMS)
 	}
 }

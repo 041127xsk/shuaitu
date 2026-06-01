@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { NCard, NButton, NInput, NEmpty, NSpin, NTag, NPagination, useMessage, NGrid, NGi } from 'naive-ui'
-import { GetPlayerTeam, GetTeamWinRateByTeam } from '../../wailsjs/go/main/App'
+import { GetPlayerTeam, GetPlayerTeamExport, GetTeamWinRateByTeam } from '../../wailsjs/go/main/App'
 import { Search, Swords, Star, Filter, Download } from 'lucide-vue-next'
 import { herocfg, skillcfg } from '../cfg'
 
@@ -21,6 +21,8 @@ const viewMode = ref('list') // list | compact
 const page = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
+const queryMs = ref<number | null>(null)
+const cacheHit = ref(false)
 
 const doSearch = (newPage?: number) => {
     if (typeof newPage === 'number') page.value = newPage
@@ -33,6 +35,8 @@ const doSearch = (newPage?: number) => {
         if (resp.code == 200) {
             results.value = resp.data.list || []
             total.value = resp.data.total || 0
+            queryMs.value = resp.data.query_ms ?? null
+            cacheHit.value = !!resp.data.cache_hit
         } else {
             nmessage.error(resp.msg)
         }
@@ -47,29 +51,17 @@ const exporting = ref(false)
 const doExport = async () => {
     exporting.value = true
 
-    // 分页查询所有数据
     let allList = []
-    let page = 1
-    const pageSize = 1000
-    let hasMore = true
 
     try {
-        while (hasMore) {
-            const v = await GetPlayerTeam(searchName.value, searchUnion.value, searchIdu.value, page, pageSize)
-            const resp = JSON.parse(v)
-            if (resp.code != 200) {
-                nmessage.error(resp.msg)
-                exporting.value = false
-                return
-            }
-            const list = resp.data.list || []
-            allList = allList.concat(list)
-            if (list.length < pageSize) {
-                hasMore = false
-            } else {
-                page++
-            }
+        const v = await GetPlayerTeamExport(searchName.value, searchUnion.value, searchIdu.value)
+        const resp = JSON.parse(v)
+        if (resp.code != 200) {
+            nmessage.error(resp.msg)
+            exporting.value = false
+            return
         }
+        allList = resp.data.list || []
 
         if (allList.length === 0) {
             nmessage.warning('没有数据可导出')
@@ -132,7 +124,9 @@ const doExport = async () => {
         XLSX.utils.book_append_sheet(wb, ws, '队伍数据')
         XLSX.writeFile(wb, `player_team_export_${new Date().toISOString().slice(0,10)}.xlsx`)
 
-        nmessage.success(`已导出 ${allList.length} 条队伍数据`)
+        const cost = resp.data.query_ms != null ? `，查询耗时 ${resp.data.query_ms}ms` : ''
+        const hit = resp.data.cache_hit ? '，命中缓存' : ''
+        nmessage.success(`已导出 ${allList.length} 条队伍数据${cost}${hit}`)
     } catch (e) {
         nmessage.error('导出失败: ' + e)
     } finally {
@@ -279,6 +273,8 @@ const qualityColor = (q) => {
                 <span>{{ Object.keys(getPlayerTeams()).length }} 位玩家</span>
                 <span>{{ results.length }} 支队伍</span>
                 <span>共 {{ total }} 条</span>
+                <span v-if="queryMs !== null">耗时 {{ queryMs }}ms</span>
+                <span v-if="cacheHit">命中缓存</span>
             </div>
 
             <!-- 紧凑模式 - 表格视图 -->

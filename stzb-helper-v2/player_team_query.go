@@ -38,6 +38,11 @@ type playerTeamCacheEntry struct {
 	teams     []playerTeam
 }
 
+type playerTeamQueryMeta struct {
+	QueryMS  int64 `json:"query_ms"`
+	CacheHit bool  `json:"cache_hit"`
+}
+
 var playerTeamQueryCache = struct {
 	sync.Mutex
 	entry playerTeamCacheEntry
@@ -46,20 +51,37 @@ var playerTeamQueryCache = struct {
 const playerTeamQueryCacheTTL = 20 * time.Second
 
 func queryEffectivePlayerTeams(name, uname, idu string) ([]playerTeam, error) {
+	teams, _, err := queryEffectivePlayerTeamsWithMeta(name, uname, idu)
+	return teams, err
+}
+
+func queryEffectivePlayerTeamsWithMeta(name, uname, idu string) ([]playerTeam, playerTeamQueryMeta, error) {
+	start := time.Now()
 	key := playerTeamQueryCacheKey(name, uname, idu)
 	if teams, ok := getCachedPlayerTeams(key); ok {
 		log.Printf("队伍查询命中缓存: name=%s, union=%s, idu=%s, 有效队伍=%d", name, uname, idu, len(teams))
-		return teams, nil
+		return teams, newPlayerTeamQueryMeta(start, true), nil
 	}
 
 	rows, err := queryPlayerTeamCandidates(name, uname, idu)
 	if err != nil {
-		return nil, err
+		return nil, newPlayerTeamQueryMeta(start, false), err
 	}
 	teams := buildEffectivePlayerTeams(rows)
 	setCachedPlayerTeams(key, teams)
 	log.Printf("队伍查询刷新缓存: name=%s, union=%s, idu=%s, 候选=%d, 有效=%d", name, uname, idu, len(rows), len(teams))
-	return teams, nil
+	return teams, newPlayerTeamQueryMeta(start, false), nil
+}
+
+func newPlayerTeamQueryMeta(start time.Time, cacheHit bool) playerTeamQueryMeta {
+	elapsed := time.Since(start).Milliseconds()
+	if elapsed < 0 {
+		elapsed = 0
+	}
+	return playerTeamQueryMeta{
+		QueryMS:  elapsed,
+		CacheHit: cacheHit,
+	}
 }
 
 func queryPlayerTeamCandidates(name, uname, idu string) ([]playerTeam, error) {
