@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
+    "test:selector": "node scripts/test-team-select-options.mjs",
     "type-check": "vue-tsc --noEmit",
     "preview": "vite preview"
   },

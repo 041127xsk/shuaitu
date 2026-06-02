@@ -167,10 +167,17 @@
 - 新增 Wails 接口：`CreateManualPlayerTeam`、`UpdateManualPlayerTeam`、`HidePlayerTeam`、`RestoreHiddenPlayerTeam`、`DeleteManualPlayerTeam`、`GetHiddenPlayerTeams`。
 - 验证：`go test ./...`、`npm run build` 已通过。
 
+## ~~P2-10 stzb-helper-v2 队伍查询武将/战法搜索选择器~~ ✅ 已完成 (2026-06-02)
+- `TeamQuery.vue`：新增/编辑弹窗中的武将 ID、主战法 ID、战法 1 ID、战法 2 ID 已升级为可搜索选择器。
+- `frontend/src/utils/teamSelectOptions.js`：从现有 `herocfg` / `skillcfg` 生成选项，支持名称、别名、兵种、类型、品质和 ID 搜索。
+- 保留手动输入数字 ID 的能力，避免配置表缺项时无法保存。
+- `frontend/scripts/test-team-select-options.mjs`：覆盖选项生成、搜索匹配和 ID 归一化。
+- 验证：`npm run test:selector`、`npm run build` 已通过。
+
 后续可优化：
-- 给新增/编辑弹窗补武将和战法搜索选择器，减少手填 ID 的成本。
 - 隐藏队伍管理中补原始战报详情回显，目前第一版主要展示来源、角色和可恢复操作。
 - 若大库下隐藏记录非常多，可把隐藏过滤改成按查询条件预筛。
+- 可进一步给宝物原始值做可视化三槽编辑，减少手填宝物串的成本。
 
 ## P2-8 后续发布产物整理
 背景：

@@ -32,11 +32,14 @@ import {
 } from '../../wailsjs/go/main/App'
 import { Download, EyeOff, Pencil, Plus, RotateCcw, Search, Settings, Star, Swords, Trash2 } from 'lucide-vue-next'
 import { gear_cfg, herocfg, skillcfg } from '../cfg'
+import { buildHeroOptions, buildSkillOptions, filterSelectOption, selectIdValue, toNumericSelectValue } from '../utils/teamSelectOptions.js'
 
 const heroMap = JSON.parse(herocfg)
 const skillMap = JSON.parse(skillcfg)
 const gearMap: Record<number, any> = {}
 gear_cfg.forEach((g: any) => { gearMap[g.gear_id] = g })
+const heroSelectOptions = buildHeroOptions(heroMap)
+const skillSelectOptions = buildSkillOptions(skillMap)
 
 const nmessage = useMessage()
 const loading = ref(false)
@@ -703,7 +706,20 @@ const restoreHiddenTeam = async (row: any) => {
                     <n-gi v-for="i in 3" :key="i">
                         <div class="form-hero-block">
                             <div class="form-hero-title">{{ ['大营', '中军', '前锋'][i - 1] }}</div>
-                            <n-form-item label="武将ID"><n-input-number v-model:value="teamForm[`hero${i}_id`]" :show-button="false" /></n-form-item>
+                            <n-form-item label="武将">
+                                <n-select
+                                    class="id-selector"
+                                    :value="selectIdValue(teamForm[`hero${i}_id`])"
+                                    :options="heroSelectOptions"
+                                    :filter="filterSelectOption"
+                                    filterable
+                                    clearable
+                                    tag
+                                    :consistent-menu-width="false"
+                                    placeholder="搜武将名或ID"
+                                    @update:value="(value) => teamForm[`hero${i}_id`] = toNumericSelectValue(value)"
+                                />
+                            </n-form-item>
                             <n-form-item label="等级"><n-input-number v-model:value="teamForm[`hero${i}_level`]" :show-button="false" /></n-form-item>
                             <n-form-item label="红度"><n-input-number v-model:value="teamForm[`hero${i}_star`]" :show-button="false" /></n-form-item>
                             <div class="form-hero-name">{{ getHeroName(teamForm[`hero${i}_id`]) }}</div>
@@ -715,11 +731,44 @@ const restoreHiddenTeam = async (row: any) => {
                 <div class="skill-editor">
                     <div class="skill-row" v-for="(row, index) in skillRows" :key="index">
                         <span class="skill-row-title">{{ ['大营', '中军', '前锋'][index] }}</span>
-                        <n-input-number v-model:value="row.main" placeholder="主战法ID" :show-button="false" />
+                        <n-select
+                            class="id-selector"
+                            :value="selectIdValue(row.main)"
+                            :options="skillSelectOptions"
+                            :filter="filterSelectOption"
+                            filterable
+                            clearable
+                            tag
+                            :consistent-menu-width="false"
+                            placeholder="主战法"
+                            @update:value="(value) => row.main = toNumericSelectValue(value)"
+                        />
                         <n-input-number v-model:value="row.main_level" placeholder="等级" :show-button="false" />
-                        <n-input-number v-model:value="row.skill1" placeholder="战法1 ID" :show-button="false" />
+                        <n-select
+                            class="id-selector"
+                            :value="selectIdValue(row.skill1)"
+                            :options="skillSelectOptions"
+                            :filter="filterSelectOption"
+                            filterable
+                            clearable
+                            tag
+                            :consistent-menu-width="false"
+                            placeholder="战法1"
+                            @update:value="(value) => row.skill1 = toNumericSelectValue(value)"
+                        />
                         <n-input-number v-model:value="row.skill1_level" placeholder="等级" :show-button="false" />
-                        <n-input-number v-model:value="row.skill2" placeholder="战法2 ID" :show-button="false" />
+                        <n-select
+                            class="id-selector"
+                            :value="selectIdValue(row.skill2)"
+                            :options="skillSelectOptions"
+                            :filter="filterSelectOption"
+                            filterable
+                            clearable
+                            tag
+                            :consistent-menu-width="false"
+                            placeholder="战法2"
+                            @update:value="(value) => row.skill2 = toNumericSelectValue(value)"
+                        />
                         <n-input-number v-model:value="row.skill2_level" placeholder="等级" :show-button="false" />
                     </div>
                 </div>
@@ -1128,7 +1177,7 @@ const restoreHiddenTeam = async (row: any) => {
 
     .skill-row {
         display: grid;
-        grid-template-columns: 56px repeat(6, minmax(84px, 1fr));
+        grid-template-columns: 56px minmax(150px, 1.5fr) 70px minmax(150px, 1.5fr) 70px minmax(150px, 1.5fr) 70px;
         gap: 8px;
         align-items: center;
     }
@@ -1137,6 +1186,10 @@ const restoreHiddenTeam = async (row: any) => {
         font-size: 13px;
         color: var(--color-text-secondary);
     }
+}
+
+.id-selector {
+    min-width: 0;
 }
 
 .raw-fields {

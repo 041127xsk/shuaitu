@@ -234,6 +234,13 @@
   - Excel 导出继续走后端一次性有效队伍结果，因此会包含手工修正并排除隐藏队伍。
   - 新增/更新 `player_team_query_test.go` 覆盖手工队伍优先和隐藏过滤规则；`go test ./...`、`npm run build` 已通过。
 
+## 最近一次会话进展（2026-06-02 队伍选择器）
+- **stzb-helper-v2 队伍查询武将/战法搜索选择器**：
+  - 队伍查询新增/编辑弹窗中的三名武将、主战法、战法 1、战法 2 已由纯数字输入升级为可搜索选择器。
+  - 选择器复用 `frontend/src/cfg.js` 里的 `herocfg` / `skillcfg`，支持按武将名、别名、兵种、战法名、类型、品质和 ID 搜索，不新增后端接口或数据库字段。
+  - 找不到配置项时仍可手动输入数字 ID，保存时继续写入原有数字字段，兼容历史手工数据。
+  - 新增 `frontend/src/utils/teamSelectOptions.js` 和 `npm run test:selector`，覆盖选项生成、搜索匹配和 ID 归一化；`npm run test:selector`、`npm run build` 已通过。
+
 ## 最近一次会话进展（2026-04-26）
 - 确认了 AI 抽取使用通义千问 dashscope API（`qwen/qwen3.5-flash`）。
 - AI 抽取验证结果：群吕布（4 effects，skill_type 为空）、张机（2 effects，完整数据）、赵云（3 effects，skill_type 为空）。
