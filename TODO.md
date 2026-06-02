@@ -137,6 +137,26 @@
 
 ## P2 可选优化
 
+## P2-9 stzb-helper-v2 百万级战报物化统计性能优化 🔄 设计已批准
+背景：
+一赛季战报可能达到几十万到一百多万条。当前队伍查询和胜率统计虽然已有短时缓存和索引，但仍会在大库上重复扫描、排序和聚合原始 `battle_report`。
+
+推荐实现：
+- 新增 `player_team_snapshot` 派生表，让队伍查询优先读快照。
+- 新增 `team_winrate_stats` 派生表，胜率仍从原始战报规则计算，但实时/增量维护成预计算统计。
+- 新增 `materialized_state` 记录派生表版本、状态、最后处理的 `battle_id` 和重建进度。
+- 队伍查询先返回快照结果；展开某支队伍时，再异步从原始 `battle_report` 加载相关战报。
+- 支持从原始 `battle_report` 全量重建派生表，并支持采集时增量更新。
+
+验收标准：
+- 百万级库下队伍查询不再依赖全表临时去重。
+- 胜率页默认读预计算统计，数据规则仍以 `battle_report.result` 为准。
+- 新抓取战报能更新派生统计，异常时可标记 stale 并重建。
+- 单支队伍可展开查看最近相关原始战报。
+
+设计文档：
+- `stzb-helper-v2/docs/superpowers/specs/2026-06-02-performance-materialized-stats-design.md`
+
 ## ~~P2-5 stzb-helper-v2 自动翻页重复战报开关与日志浅色修复~~ ✅ 已完成 (2026-06-01)
 - `app.go`：重复战报默认只记录最后处理到的 `battle_id` 并继续翻页；新增 `stop_on_duplicate` 开关，打开后才自动停止。
 - `parse.go`：新增统一记录函数，重复战报和新增战报都会更新本次最后战报 ID。

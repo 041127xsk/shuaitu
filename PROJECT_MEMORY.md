@@ -225,6 +225,15 @@
   - `model.InitDB` 补充胜率查询相关复合索引，覆盖结果、攻守双方等级/兵力等过滤条件。
   - 新增 `query_cache.go` 作为轻量查询缓存工具，数据库切换/创建和新增战报时同步失效。
 
+## 最近一次会话进展（2026-06-02 更晚）
+- **stzb-helper-v2 百万级战报性能方案设计已确定**：
+  - 用户确认一赛季数据可能达到几十万到一百多万条，选择物化统计/缓存表路线。
+  - 设计新增 `player_team_snapshot`，队伍查询优先读快照，先快速展示队伍结果。
+  - 设计新增 `team_winrate_stats`，胜率仍以原始 `battle_report` 为唯一权威来源，但采集时实时/增量维护预计算胜负平统计。
+  - 设计新增 `materialized_state` 记录派生表状态、版本、最后处理的 `battle_id` 和重建状态。
+  - 队伍查询将支持“先出结果，展开后按需加载相关原始战报”，避免主查询被原始大表拖慢。
+  - 设计文档已写入 `stzb-helper-v2/docs/superpowers/specs/2026-06-02-performance-materialized-stats-design.md`。
+
 ## 最近一次会话进展（2026-04-26）
 - 确认了 AI 抽取使用通义千问 dashscope API（`qwen/qwen3.5-flash`）。
 - AI 抽取验证结果：群吕布（4 effects，skill_type 为空）、张机（2 effects，完整数据）、赵云（3 effects，skill_type 为空）。
