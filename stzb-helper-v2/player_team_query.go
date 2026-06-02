@@ -12,6 +12,7 @@ import (
 
 type playerTeam struct {
 	PlayerName   string `json:"player_name"`
+	UnionName    string `json:"union_name"`
 	BattleID     int    `json:"battle_id"`
 	Hero1ID      int    `json:"hero1_id"`
 	Hero2ID      int    `json:"hero2_id"`
@@ -30,6 +31,10 @@ type playerTeam struct {
 	Gear         string `json:"gear"`
 	HeroType     string `json:"hero_type"`
 	Idu          string `json:"idu"`
+	SourceType   string `json:"source_type"`
+	SourceID     int    `json:"source_id"`
+	Manual       bool   `json:"manual"`
+	Note         string `json:"note"`
 }
 
 type playerTeamCacheEntry struct {
@@ -67,6 +72,16 @@ func queryEffectivePlayerTeamsWithMeta(name, uname, idu string) ([]playerTeam, p
 	if err != nil {
 		return nil, newPlayerTeamQueryMeta(start, false), err
 	}
+	manualRows, err := queryManualPlayerTeamCandidates(name, uname, idu)
+	if err != nil {
+		return nil, newPlayerTeamQueryMeta(start, false), err
+	}
+	hidden, err := queryHiddenPlayerTeamKeys()
+	if err != nil {
+		return nil, newPlayerTeamQueryMeta(start, false), err
+	}
+	rows = append(rows, manualRows...)
+	rows = filterHiddenPlayerTeams(rows, hidden)
 	teams := buildEffectivePlayerTeams(rows)
 	setCachedPlayerTeams(key, teams)
 	log.Printf("队伍查询刷新缓存: name=%s, union=%s, idu=%s, 候选=%d, 有效=%d", name, uname, idu, len(rows), len(teams))
@@ -96,6 +111,7 @@ func queryPlayerTeamCandidates(name, uname, idu string) ([]playerTeam, error) {
 	query := fmt.Sprintf(`
 		SELECT
 			attack_name AS player_name,
+			attack_union_name AS union_name,
 			attack_hero1_id AS hero1_id,
 			attack_hero2_id AS hero2_id,
 			attack_hero3_id AS hero3_id,
@@ -113,12 +129,17 @@ func queryPlayerTeamCandidates(name, uname, idu string) ([]playerTeam, error) {
 			time,
 			all_skill_info,
 			battle_id,
-			'attack' AS role
+			'attack' AS role,
+			'battle_report' AS source_type,
+			battle_id AS source_id,
+			0 AS manual,
+			'' AS note
 		FROM battle_report
 		WHERE %s
 		UNION ALL
 		SELECT
 			defend_name AS player_name,
+			defend_union_name AS union_name,
 			defend_hero1_id AS hero1_id,
 			defend_hero2_id AS hero2_id,
 			defend_hero3_id AS hero3_id,
@@ -136,7 +157,11 @@ func queryPlayerTeamCandidates(name, uname, idu string) ([]playerTeam, error) {
 			time,
 			all_skill_info,
 			battle_id,
-			'defend' AS role
+			'defend' AS role,
+			'battle_report' AS source_type,
+			battle_id AS source_id,
+			0 AS manual,
+			'' AS note
 		FROM battle_report
 		WHERE %s
 		ORDER BY time DESC, battle_id DESC`, strings.Join(attackWhere, " AND "), strings.Join(defendWhere, " AND "))
@@ -182,6 +207,9 @@ func buildPlayerTeamWhere(side, name, uname, idu string) ([]string, []interface{
 func buildEffectivePlayerTeams(rows []playerTeam) []playerTeam {
 	sortedRows := append([]playerTeam(nil), rows...)
 	sort.SliceStable(sortedRows, func(i, j int) bool {
+		if sortedRows[i].Manual != sortedRows[j].Manual {
+			return sortedRows[i].Manual
+		}
 		if sortedRows[i].Time == sortedRows[j].Time {
 			return sortedRows[i].BattleID > sortedRows[j].BattleID
 		}
@@ -231,6 +259,39 @@ func sharedHeroCount(a, b playerTeam) int {
 
 func playerTeamExactKey(team playerTeam) string {
 	return fmt.Sprintf("%s|%d|%d|%d", team.PlayerName, team.Hero1ID, team.Hero2ID, team.Hero3ID)
+}
+
+func hiddenPlayerTeamKey(sourceType string, sourceID int, role string) string {
+	return fmt.Sprintf("%s|%d|%s", sourceType, sourceID, role)
+}
+
+func normalizePlayerTeamSource(row playerTeam) playerTeam {
+	if row.SourceType == "" {
+		if row.Manual {
+			row.SourceType = "manual"
+		} else {
+			row.SourceType = "battle_report"
+		}
+	}
+	if row.SourceID == 0 {
+		row.SourceID = row.BattleID
+	}
+	return row
+}
+
+func filterHiddenPlayerTeams(rows []playerTeam, hidden map[string]bool) []playerTeam {
+	if len(hidden) == 0 {
+		return rows
+	}
+	filtered := make([]playerTeam, 0, len(rows))
+	for _, row := range rows {
+		row = normalizePlayerTeamSource(row)
+		if hidden[hiddenPlayerTeamKey(row.SourceType, row.SourceID, row.Role)] {
+			continue
+		}
+		filtered = append(filtered, row)
+	}
+	return filtered
 }
 
 func paginatePlayerTeams(teams []playerTeam, page, pageSize int) ([]playerTeam, int) {

@@ -22,8 +22,16 @@ export function CreateDb(arg1) {
   return window['go']['main']['App']['CreateDb'](arg1);
 }
 
+export function CreateManualPlayerTeam(arg1) {
+  return window['go']['main']['App']['CreateManualPlayerTeam'](arg1);
+}
+
 export function CreateTask(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['CreateTask'](arg1, arg2, arg3, arg4);
+}
+
+export function DeleteManualPlayerTeam(arg1) {
+  return window['go']['main']['App']['DeleteManualPlayerTeam'](arg1);
 }
 
 export function DeleteTask(arg1) {
@@ -78,6 +86,10 @@ export function GetGroupWu() {
   return window['go']['main']['App']['GetGroupWu']();
 }
 
+export function GetHiddenPlayerTeams() {
+  return window['go']['main']['App']['GetHiddenPlayerTeams']();
+}
+
 export function GetLogs() {
   return window['go']['main']['App']['GetLogs']();
 }
@@ -126,8 +138,16 @@ export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }
 
+export function HidePlayerTeam(arg1, arg2, arg3) {
+  return window['go']['main']['App']['HidePlayerTeam'](arg1, arg2, arg3);
+}
+
 export function LoadConfig() {
   return window['go']['main']['App']['LoadConfig']();
+}
+
+export function RestoreHiddenPlayerTeam(arg1, arg2, arg3) {
+  return window['go']['main']['App']['RestoreHiddenPlayerTeam'](arg1, arg2, arg3);
 }
 
 export function SaveConfig(arg1) {
@@ -148,4 +168,8 @@ export function StatisticsReport(arg1) {
 
 export function StopAutoScroll() {
   return window['go']['main']['App']['StopAutoScroll']();
+}
+
+export function UpdateManualPlayerTeam(arg1, arg2) {
+  return window['go']['main']['App']['UpdateManualPlayerTeam'](arg1, arg2);
 }

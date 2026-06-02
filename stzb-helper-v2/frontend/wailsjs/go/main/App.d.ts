@@ -11,7 +11,11 @@ export function CheckUpdate():Promise<string>;
 
 export function CreateDb(arg1:string):Promise<string>;
 
+export function CreateManualPlayerTeam(arg1:string):Promise<string>;
+
 export function CreateTask(arg1:string,arg2:number,arg3:Array<string>,arg4:Array<string>):Promise<string>;
+
+export function DeleteManualPlayerTeam(arg1:number):Promise<string>;
 
 export function DeleteTask(arg1:number):Promise<string>;
 
@@ -39,6 +43,8 @@ export function GetDbList():Promise<string>;
 
 export function GetGroupWu():Promise<string>;
 
+export function GetHiddenPlayerTeams():Promise<string>;
+
 export function GetLogs():Promise<string>;
 
 export function GetPlayerTeam(arg1:string,arg2:string,arg3:string,arg4:number,arg5:number):Promise<string>;
@@ -63,7 +69,11 @@ export function GetVersion():Promise<string>;
 
 export function Greet(arg1:string):Promise<string>;
 
+export function HidePlayerTeam(arg1:string,arg2:number,arg3:string):Promise<string>;
+
 export function LoadConfig():Promise<string>;
+
+export function RestoreHiddenPlayerTeam(arg1:string,arg2:number,arg3:string):Promise<string>;
 
 export function SaveConfig(arg1:string):Promise<string>;
 
@@ -74,3 +84,5 @@ export function StartAutoScroll(arg1:string):Promise<string>;
 export function StatisticsReport(arg1:number):Promise<string>;
 
 export function StopAutoScroll():Promise<string>;
+
+export function UpdateManualPlayerTeam(arg1:number,arg2:string):Promise<string>;

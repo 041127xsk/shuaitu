@@ -225,6 +225,15 @@
   - `model.InitDB` 补充胜率查询相关复合索引，覆盖结果、攻守双方等级/兵力等过滤条件。
   - 新增 `query_cache.go` 作为轻量查询缓存工具，数据库切换/创建和新增战报时同步失效。
 
+## 最近一次会话进展（2026-06-02 队伍修正）
+- **stzb-helper-v2 队伍查询增删改修正层**：
+  - 新增 `manual_player_team` 手工队伍表和 `hidden_player_team` 隐藏队伍表，由 `model.InitDB` 自动迁移，不修改 `battle_report` 原始战报 schema。
+  - `GetPlayerTeam` / `GetPlayerTeamExport` 合并原始战报队伍与手工队伍，再过滤隐藏记录；手工队伍优先参与“同玩家共享 2 个武将 ID 替换旧队伍”的规则。
+  - 新增 Wails 接口：`CreateManualPlayerTeam`、`UpdateManualPlayerTeam`、`HidePlayerTeam`、`RestoreHiddenPlayerTeam`、`DeleteManualPlayerTeam`、`GetHiddenPlayerTeams`。
+  - 队伍查询页新增“新增队伍”“编辑”“隐藏/删除”和“隐藏队伍管理”能力；编辑原始战报时会创建手工修正并隐藏原始来源，不破坏胜率和历史战报。
+  - Excel 导出继续走后端一次性有效队伍结果，因此会包含手工修正并排除隐藏队伍。
+  - 新增/更新 `player_team_query_test.go` 覆盖手工队伍优先和隐藏过滤规则；`go test ./...`、`npm run build` 已通过。
+
 ## 最近一次会话进展（2026-04-26）
 - 确认了 AI 抽取使用通义千问 dashscope API（`qwen/qwen3.5-flash`）。
 - AI 抽取验证结果：群吕布（4 effects，skill_type 为空）、张机（2 effects，完整数据）、赵云（3 effects，skill_type 为空）。

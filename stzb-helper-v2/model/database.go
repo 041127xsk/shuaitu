@@ -29,7 +29,7 @@ func InitDB(databasePath string) {
 		return
 	}
 
-	err = db.AutoMigrate(&TeamUser{}, &Task{}, &Report{}, &BattleReport{})
+	err = db.AutoMigrate(&TeamUser{}, &Task{}, &Report{}, &BattleReport{}, &ManualPlayerTeam{}, &HiddenPlayerTeam{})
 	if err != nil {
 		log.Println("数据库迁移失败:", err)
 		return
@@ -52,6 +52,10 @@ func InitDB(databasePath string) {
 		"CREATE INDEX IF NOT EXISTS idx_br_result_time ON battle_report(result, time DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_br_attack_winrate ON battle_report(npc, result, attack_hp, defend_hp, attack_hero1_level, attack_hero2_level, attack_hero3_level, defend_hero1_level, defend_hero2_level, defend_hero3_level)",
 		"CREATE INDEX IF NOT EXISTS idx_br_defend_winrate ON battle_report(npc, result, defend_hp, attack_hp, defend_hero1_level, defend_hero2_level, defend_hero3_level, attack_hero1_level, attack_hero2_level, attack_hero3_level)",
+		"CREATE INDEX IF NOT EXISTS idx_manual_team_player ON manual_player_team(player_name)",
+		"CREATE INDEX IF NOT EXISTS idx_manual_team_union ON manual_player_team(union_name)",
+		"CREATE INDEX IF NOT EXISTS idx_manual_team_idu ON manual_player_team(idu)",
+		"CREATE INDEX IF NOT EXISTS idx_manual_team_enabled ON manual_player_team(enabled)",
 	}
 	for _, sql := range indexes {
 		if err := db.Exec(sql).Error; err != nil {

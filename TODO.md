@@ -159,6 +159,19 @@
 - `query_cache.go`：新增 20 秒轻量查询缓存，数据库切换/创建和新增战报时失效。
 - `model/database.go`：新增胜率查询索引，改善大库胜率统计筛选。
 
+## ~~P2-9 stzb-helper-v2 队伍查询增删改修正层~~ ✅ 已完成 (2026-06-02)
+- `manual_player_team`：新增手工队伍/编辑修正表，保存玩家、同盟、队伍ID、时间、兵力、三武将、战法、宝物、兵种和备注。
+- `hidden_player_team`：新增隐藏记录表，支持原始战报队伍和手工队伍隐藏后恢复。
+- `GetPlayerTeam` / `GetPlayerTeamExport`：合并原始战报与手工队伍，过滤隐藏记录，再执行同玩家共享 2 个武将的旧队伍替换规则；分页、耗时显示和 Excel 导出保持一致。
+- `TeamQuery.vue`：新增队伍、编辑、隐藏、手工队伍永久删除、隐藏队伍恢复入口。
+- 新增 Wails 接口：`CreateManualPlayerTeam`、`UpdateManualPlayerTeam`、`HidePlayerTeam`、`RestoreHiddenPlayerTeam`、`DeleteManualPlayerTeam`、`GetHiddenPlayerTeams`。
+- 验证：`go test ./...`、`npm run build` 已通过。
+
+后续可优化：
+- 给新增/编辑弹窗补武将和战法搜索选择器，减少手填 ID 的成本。
+- 隐藏队伍管理中补原始战报详情回显，目前第一版主要展示来源、角色和可恢复操作。
+- 若大库下隐藏记录非常多，可把隐藏过滤改成按查询条件预筛。
+
 ## P2-8 后续发布产物整理
 背景：
 `build/bin` 里已有多个历史 exe，本地调试方便但长期容易混淆。
