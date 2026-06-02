@@ -29,7 +29,7 @@ func InitDB(databasePath string) {
 		return
 	}
 
-	err = db.AutoMigrate(&TeamUser{}, &Task{}, &Report{}, &BattleReport{}, &ManualPlayerTeam{}, &HiddenPlayerTeam{})
+	err = db.AutoMigrate(&TeamUser{}, &Task{}, &Report{}, &BattleReport{}, &ManualPlayerTeam{}, &HiddenPlayerTeam{}, &NameMapping{})
 	if err != nil {
 		log.Println("数据库迁移失败:", err)
 		return
@@ -56,6 +56,7 @@ func InitDB(databasePath string) {
 		"CREATE INDEX IF NOT EXISTS idx_manual_team_union ON manual_player_team(union_name)",
 		"CREATE INDEX IF NOT EXISTS idx_manual_team_idu ON manual_player_team(idu)",
 		"CREATE INDEX IF NOT EXISTS idx_manual_team_enabled ON manual_player_team(enabled)",
+		"CREATE INDEX IF NOT EXISTS idx_name_mapping_kind ON name_mapping(kind)",
 	}
 	for _, sql := range indexes {
 		if err := db.Exec(sql).Error; err != nil {

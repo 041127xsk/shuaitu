@@ -34,6 +34,10 @@ export function DeleteManualPlayerTeam(arg1) {
   return window['go']['main']['App']['DeleteManualPlayerTeam'](arg1);
 }
 
+export function DeleteNameMapping(arg1, arg2) {
+  return window['go']['main']['App']['DeleteNameMapping'](arg1, arg2);
+}
+
 export function DeleteTask(arg1) {
   return window['go']['main']['App']['DeleteTask'](arg1);
 }
@@ -94,6 +98,10 @@ export function GetLogs() {
   return window['go']['main']['App']['GetLogs']();
 }
 
+export function GetNameMappings() {
+  return window['go']['main']['App']['GetNameMappings']();
+}
+
 export function GetPlayerTeam(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['GetPlayerTeam'](arg1, arg2, arg3, arg4, arg5);
 }
@@ -152,6 +160,10 @@ export function RestoreHiddenPlayerTeam(arg1, arg2, arg3) {
 
 export function SaveConfig(arg1) {
   return window['go']['main']['App']['SaveConfig'](arg1);
+}
+
+export function SaveNameMapping(arg1) {
+  return window['go']['main']['App']['SaveNameMapping'](arg1);
 }
 
 export function SelectDb(arg1) {

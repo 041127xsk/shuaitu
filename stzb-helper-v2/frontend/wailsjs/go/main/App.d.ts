@@ -17,6 +17,8 @@ export function CreateTask(arg1:string,arg2:number,arg3:Array<string>,arg4:Array
 
 export function DeleteManualPlayerTeam(arg1:number):Promise<string>;
 
+export function DeleteNameMapping(arg1:string,arg2:number):Promise<string>;
+
 export function DeleteTask(arg1:number):Promise<string>;
 
 export function DeleteTaskReport(arg1:number):Promise<string>;
@@ -47,6 +49,8 @@ export function GetHiddenPlayerTeams():Promise<string>;
 
 export function GetLogs():Promise<string>;
 
+export function GetNameMappings():Promise<string>;
+
 export function GetPlayerTeam(arg1:string,arg2:string,arg3:string,arg4:number,arg5:number):Promise<string>;
 
 export function GetPlayerTeamExport(arg1:string,arg2:string,arg3:string):Promise<string>;
@@ -76,6 +80,8 @@ export function LoadConfig():Promise<string>;
 export function RestoreHiddenPlayerTeam(arg1:string,arg2:number,arg3:string):Promise<string>;
 
 export function SaveConfig(arg1:string):Promise<string>;
+
+export function SaveNameMapping(arg1:string):Promise<string>;
 
 export function SelectDb(arg1:string):Promise<string>;
 

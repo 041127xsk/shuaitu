@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
     NButton,
     NButtonGroup,
@@ -23,28 +23,32 @@ import {
 import {
     CreateManualPlayerTeam,
     DeleteManualPlayerTeam,
+    DeleteNameMapping,
     GetHiddenPlayerTeams,
+    GetNameMappings,
     GetPlayerTeam,
     GetPlayerTeamExport,
     HidePlayerTeam,
     RestoreHiddenPlayerTeam,
+    SaveNameMapping,
     UpdateManualPlayerTeam
 } from '../../wailsjs/go/main/App'
 import { Download, EyeOff, Pencil, Plus, RotateCcw, Search, Settings, Star, Swords, Trash2 } from 'lucide-vue-next'
 import { gear_cfg, herocfg, skillcfg } from '../cfg'
+import { buildNameMappingIndex, getMappedName, mergeHeroMapWithMappings, mergeSkillMapWithMappings } from '../utils/nameMappings.js'
 import { buildHeroOptions, buildSkillOptions, filterSelectOption, selectIdValue, toNumericSelectValue } from '../utils/teamSelectOptions.js'
 
 const heroMap = JSON.parse(herocfg)
 const skillMap = JSON.parse(skillcfg)
 const gearMap: Record<number, any> = {}
 gear_cfg.forEach((g: any) => { gearMap[g.gear_id] = g })
-const heroSelectOptions = buildHeroOptions(heroMap)
-const skillSelectOptions = buildSkillOptions(skillMap)
 
 const nmessage = useMessage()
 const loading = ref(false)
 const exporting = ref(false)
 const savingTeam = ref(false)
+const mappingLoading = ref(false)
+const savingMapping = ref(false)
 const results = ref<any[]>([])
 
 const searchName = ref('')
@@ -101,15 +105,28 @@ const emptySkillRows = () => [1, 2, 3].map(() => ({
 
 const teamModalVisible = ref(false)
 const hiddenModalVisible = ref(false)
+const mappingModalVisible = ref(false)
 const hiddenLoading = ref(false)
 const hiddenTeams = ref<any[]>([])
+const nameMappings = ref<any[]>([])
 const formMode = ref<'create' | 'edit'>('create')
 const teamForm = ref<any>(emptyTeamForm())
 const skillRows = ref<any[]>(emptySkillRows())
+const mappingForm = ref<any>({ kind: 'hero', id: null, name: '', note: '' })
 
 const totalStarAuto = computed(() =>
     Number(teamForm.value.hero1_star || 0) + Number(teamForm.value.hero2_star || 0) + Number(teamForm.value.hero3_star || 0)
 )
+const mappingIndex = computed(() => buildNameMappingIndex(nameMappings.value))
+const mappedHeroMap = computed(() => mergeHeroMapWithMappings(heroMap, mappingIndex.value))
+const mappedSkillMap = computed(() => mergeSkillMapWithMappings(skillMap, mappingIndex.value))
+const heroSelectOptions = computed(() => buildHeroOptions(mappedHeroMap.value))
+const skillSelectOptions = computed(() => buildSkillOptions(mappedSkillMap.value))
+const mappingKindOptions = [
+    { label: '武将', value: 'hero' },
+    { label: '战法', value: 'skill' },
+    { label: '宝物', value: 'gear' }
+]
 
 const doSearch = (newPage?: number) => {
     if (typeof newPage === 'number') page.value = newPage
@@ -218,6 +235,8 @@ const resolveHeroId = (id: number | string) => {
 
 const getHeroName = (id: number) => {
     if (!id) return ''
+    const mapped = getMappedName(mappingIndex.value, 'hero', id) || getMappedName(mappingIndex.value, 'hero', resolveHeroId(id))
+    if (mapped) return mapped
     const hero = heroMap[String(resolveHeroId(id))]
     return hero ? hero.name : `ID:${id}`
 }
@@ -236,6 +255,8 @@ const getHeroIcon = (id: number) => {
 
 const getSkillName = (id: number | string) => {
     if (!id) return ''
+    const mapped = getMappedName(mappingIndex.value, 'skill', id)
+    if (mapped) return mapped
     const skill = skillMap[String(id)]
     return skill ? skill.name : ''
 }
@@ -266,7 +287,8 @@ const parseGearInfo = (gearStr: string, role = 'attack') => {
             result.push(null)
         } else {
             const gear = gearMap[gearId]
-            result.push({ id: gearId, name: gear ? gear.name : `ID:${gearId}`, level, refine })
+            const mapped = getMappedName(mappingIndex.value, 'gear', gearId)
+            result.push({ id: gearId, name: mapped || (gear ? gear.name : `ID:${gearId}`), level, refine })
         }
     }
     while (result.length < 3) result.push(null)
@@ -353,6 +375,7 @@ const roleType = (role: string) => role === 'attack' ? 'error' : 'info'
 const sourceLabel = (team: any) => team.manual ? '手工' : '战报'
 const sourceType = (team: any) => team.manual ? 'warning' : 'success'
 const sourceKey = (team: any) => `${team.source_type || 'battle_report'}-${team.source_id || team.battle_id}-${team.role}`
+const mappingKindLabel = (kind: string) => mappingKindOptions.find(option => option.value === kind)?.label || kind
 
 const qualityColor = (q: string) => {
     if (q === 'S') return 'var(--color-warning)'
@@ -360,6 +383,135 @@ const qualityColor = (q: string) => {
     if (q === 'B') return 'var(--color-success)'
     return 'var(--color-text-muted)'
 }
+
+const hasBuiltInHeroName = (id: number | string) => !!heroMap[String(resolveHeroId(id))]
+const hasBuiltInSkillName = (id: number | string) => !!skillMap[String(id)]
+const hasBuiltInGearName = (id: number | string) => !!gearMap[Number(id)]
+const hasMappedName = (kind: string, id: number | string) => !!getMappedName(mappingIndex.value, kind, id)
+
+const parseGearIds = (gearStr: string, role = 'attack') => parseGearInfo(gearStr, role)
+    .filter(Boolean)
+    .map((gear: any) => Number(gear.id))
+    .filter(Boolean)
+
+const unknownNameItems = computed(() => {
+    const seen = new Set<string>()
+    const items: any[] = []
+    const add = (kind: string, id: number | string) => {
+        const num = Number(id)
+        if (!num) return
+        const key = `${kind}-${num}`
+        if (seen.has(key) || hasMappedName(kind, num)) return
+        if (kind === 'hero' && hasBuiltInHeroName(num)) return
+        if (kind === 'skill' && hasBuiltInSkillName(num)) return
+        if (kind === 'gear' && hasBuiltInGearName(num)) return
+        seen.add(key)
+        items.push({ kind, id: num })
+    }
+
+    results.value.forEach(team => {
+        add('hero', team.hero1_id)
+        add('hero', team.hero2_id)
+        add('hero', team.hero3_id)
+        parseSkillInfo(team.all_skill_info, team.role).forEach(group => {
+            ;(group.skills || []).forEach((skill: any) => add('skill', skill.id))
+        })
+        parseGearIds(team.gear, team.role).forEach(id => add('gear', id))
+    })
+    return items
+})
+
+const filteredNameMappings = computed(() =>
+    nameMappings.value.filter(row => row.kind === mappingForm.value.kind)
+)
+
+const loadNameMappings = async (silent = false) => {
+    mappingLoading.value = true
+    try {
+        const res = await GetNameMappings()
+        const resp = JSON.parse(res)
+        if (resp.code === 200) {
+            nameMappings.value = resp.data || []
+        } else if (!silent) {
+            nmessage.error(resp.msg)
+        }
+    } catch (e) {
+        if (!silent) nmessage.error('读取名称映射失败: ' + e)
+    } finally {
+        mappingLoading.value = false
+    }
+}
+
+const openNameMappingManager = async () => {
+    mappingModalVisible.value = true
+    await loadNameMappings()
+}
+
+const fillMappingForm = (item: any) => {
+    mappingForm.value = {
+        kind: item.kind || 'hero',
+        id: Number(item.id || 0),
+        name: item.name || '',
+        note: item.note || ''
+    }
+}
+
+const resetMappingFormName = () => {
+    mappingForm.value.name = ''
+    mappingForm.value.note = ''
+}
+
+const resetMappingForm = () => {
+    mappingForm.value = { kind: 'hero', id: null, name: '', note: '' }
+}
+
+const saveNameMapping = async () => {
+    const payload = {
+        kind: mappingForm.value.kind,
+        id: Number(mappingForm.value.id || 0),
+        name: String(mappingForm.value.name || '').trim(),
+        note: String(mappingForm.value.note || '').trim()
+    }
+    if (!payload.id || !payload.name) {
+        nmessage.warning('请填写 ID 和名称')
+        return
+    }
+    savingMapping.value = true
+    try {
+        const res = await SaveNameMapping(JSON.stringify(payload))
+        const resp = JSON.parse(res)
+        if (resp.code === 200) {
+            nmessage.success(resp.msg || '名称映射已保存')
+            await loadNameMappings(true)
+            resetMappingFormName()
+        } else {
+            nmessage.error(resp.msg)
+        }
+    } catch (e) {
+        nmessage.error('保存名称映射失败: ' + e)
+    } finally {
+        savingMapping.value = false
+    }
+}
+
+const deleteNameMapping = async (row: any) => {
+    try {
+        const res = await DeleteNameMapping(row.kind, Number(row.id))
+        const resp = JSON.parse(res)
+        if (resp.code === 200) {
+            nmessage.success(resp.msg || '名称映射已删除')
+            await loadNameMappings(true)
+        } else {
+            nmessage.error(resp.msg)
+        }
+    } catch (e) {
+        nmessage.error('删除名称映射失败: ' + e)
+    }
+}
+
+onMounted(() => {
+    loadNameMappings(true)
+})
 
 const openCreateTeam = () => {
     formMode.value = 'create'
@@ -524,6 +676,10 @@ const restoreHiddenTeam = async (row: any) => {
             <n-button @click="openHiddenManager()">
                 <template #icon><Settings :size="16" /></template>
                 隐藏管理
+            </n-button>
+            <n-button @click="openNameMappingManager()">
+                <template #icon><Settings :size="16" /></template>
+                名称映射
             </n-button>
             <n-button @click="doExport()" :loading="exporting">
                 <template #icon><Download :size="16" /></template>
@@ -806,6 +962,62 @@ const restoreHiddenTeam = async (row: any) => {
                         <template #icon><RotateCcw :size="14" /></template>
                         恢复
                     </n-button>
+                </div>
+            </div>
+        </n-modal>
+
+        <n-modal v-model:show="mappingModalVisible" preset="card" title="名称映射管理" class="mapping-modal">
+            <p class="mapping-tip">手填名称会覆盖内置配置；同一数据库后续所有战报遇到相同 ID 都会显示这个名称。</p>
+            <n-form label-placement="top">
+                <n-grid :cols="4" :x-gap="12">
+                    <n-gi><n-form-item label="类型"><n-select v-model:value="mappingForm.kind" :options="mappingKindOptions" /></n-form-item></n-gi>
+                    <n-gi><n-form-item label="ID"><n-input-number v-model:value="mappingForm.id" :show-button="false" /></n-form-item></n-gi>
+                    <n-gi><n-form-item label="名称"><n-input v-model:value="mappingForm.name" placeholder="例如：新武将" /></n-form-item></n-gi>
+                    <n-gi><n-form-item label="备注"><n-input v-model:value="mappingForm.note" placeholder="可不填" /></n-form-item></n-gi>
+                </n-grid>
+                <n-space justify="end">
+                    <n-button @click="resetMappingForm">清空</n-button>
+                    <n-button type="primary" :loading="savingMapping" @click="saveNameMapping">保存映射</n-button>
+                </n-space>
+            </n-form>
+
+            <n-divider>当前结果中的未知 ID</n-divider>
+            <div v-if="unknownNameItems.length === 0" class="mapping-empty">当前查询结果里没有未知 ID</div>
+            <div v-else class="unknown-id-list">
+                <n-button
+                    v-for="item in unknownNameItems"
+                    :key="`${item.kind}-${item.id}`"
+                    size="small"
+                    secondary
+                    @click="fillMappingForm(item)"
+                >
+                    {{ mappingKindLabel(item.kind) }} {{ item.id }}
+                </n-button>
+            </div>
+
+            <n-divider>已保存映射</n-divider>
+            <div v-if="mappingLoading" class="loading small">
+                <n-spin size="small" />
+                <span>读取中...</span>
+            </div>
+            <n-empty v-else-if="filteredNameMappings.length === 0" description="当前类型暂无映射" />
+            <div v-else class="mapping-list">
+                <div class="mapping-row" v-for="row in filteredNameMappings" :key="`${row.kind}-${row.id}`">
+                    <div>
+                        <n-tag size="small" :bordered="false">{{ mappingKindLabel(row.kind) }}</n-tag>
+                        <span>ID {{ row.id }}</span>
+                        <strong>{{ row.name }}</strong>
+                        <span v-if="row.note">{{ row.note }}</span>
+                    </div>
+                    <n-space>
+                        <n-button size="small" @click="fillMappingForm(row)">编辑</n-button>
+                        <n-popconfirm @positive-click="deleteNameMapping(row)">
+                            <template #trigger>
+                                <n-button size="small" type="error" quaternary>删除</n-button>
+                            </template>
+                            删除这条名称映射？
+                        </n-popconfirm>
+                    </n-space>
                 </div>
             </div>
         </n-modal>
@@ -1200,13 +1412,36 @@ const restoreHiddenTeam = async (row: any) => {
     width: min(720px, 90vw);
 }
 
+.mapping-modal {
+    width: min(880px, 92vw);
+}
+
+.mapping-tip {
+    margin: 0 0 12px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+
+.mapping-empty {
+    padding: 10px 0;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+
+.unknown-id-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 .hidden-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.hidden-row {
+.hidden-row,
+.mapping-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1222,7 +1457,19 @@ const restoreHiddenTeam = async (row: any) => {
         gap: 10px;
         color: var(--color-text-secondary);
         font-size: 13px;
+        min-width: 0;
+
+        strong {
+            color: var(--color-text);
+            font-weight: 600;
+        }
     }
+}
+
+.mapping-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 @media (max-width: 900px) {

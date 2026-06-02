@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { buildNameMappingIndex, getMappedName, mergeHeroMapWithMappings, mergeSkillMapWithMappings } from '../src/utils/nameMappings.js'
 import { buildHeroOptions, buildSkillOptions, filterSelectOption, selectIdValue, toNumericSelectValue } from '../src/utils/teamSelectOptions.js'
 
 const heroOptions = buildHeroOptions({
@@ -32,3 +33,21 @@ assert.equal(toNumericSelectValue(null), 0)
 assert.equal(toNumericSelectValue(''), 0)
 assert.equal(toNumericSelectValue('1001'), 1001)
 assert.equal(toNumericSelectValue('abc'), 0)
+
+const mappingIndex = buildNameMappingIndex([
+  { kind: 'hero', id: 1001, name: '手填吕布' },
+  { kind: 'hero', id: 9999, name: '新武将' },
+  { kind: 'skill', id: 8888, name: '新战法' },
+  { kind: 'gear', id: 7777, name: '新宝物' }
+])
+
+assert.equal(getMappedName(mappingIndex, 'hero', 1001), '手填吕布')
+assert.equal(getMappedName(mappingIndex, 'gear', 7777), '新宝物')
+assert.equal(getMappedName(mappingIndex, 'gear', 1), '')
+
+const mappedHeroOptions = buildHeroOptions(mergeHeroMapWithMappings({ 1001: { name: '群吕布', country: '群', type: '骑' } }, mappingIndex))
+assert.equal(mappedHeroOptions.find((option) => option.value === 1001).label.includes('手填吕布'), true)
+assert.equal(mappedHeroOptions.find((option) => option.value === 9999).label.includes('新武将'), true)
+
+const mappedSkillOptions = buildSkillOptions(mergeSkillMapWithMappings({ 3001: { name: '天下无双', type: '主动', zfQuality: 'S' } }, mappingIndex))
+assert.equal(mappedSkillOptions.find((option) => option.value === 8888).label.includes('新战法'), true)

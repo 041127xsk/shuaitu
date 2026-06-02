@@ -174,10 +174,18 @@
 - `frontend/scripts/test-team-select-options.mjs`：覆盖选项生成、搜索匹配和 ID 归一化。
 - 验证：`npm run test:selector`、`npm run build` 已通过。
 
+## ~~P2-11 stzb-helper-v2 全局 ID 名称映射~~ ✅ 已完成 (2026-06-02)
+- `name_mapping`：新增手工名称映射表，支持武将、战法、宝物三类 ID。
+- `GetNameMappings` / `SaveNameMapping` / `DeleteNameMapping`：新增 Wails 接口；同一类型和 ID 会更新同一条映射。
+- `TeamQuery.vue`：新增“名称映射”弹窗，自动列出当前结果中的未知 ID，保存后队伍显示、编辑选择器和 Excel 导出立即使用手工名称。
+- `frontend/src/utils/nameMappings.js`：负责手工映射优先、合并选择器选项和未知名称判断。
+- 验证：`go test ./...`、`npm run test:selector`、`npm run build` 已通过。
+
 后续可优化：
 - 隐藏队伍管理中补原始战报详情回显，目前第一版主要展示来源、角色和可恢复操作。
 - 若大库下隐藏记录非常多，可把隐藏过滤改成按查询条件预筛。
 - 可进一步给宝物原始值做可视化三槽编辑，减少手填宝物串的成本。
+- 把同一套名称映射接入队伍胜率页和主公簿页，让所有页面都共享手工命名。
 
 ## P2-8 后续发布产物整理
 背景：

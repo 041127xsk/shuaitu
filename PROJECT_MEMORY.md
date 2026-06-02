@@ -241,6 +241,14 @@
   - 找不到配置项时仍可手动输入数字 ID，保存时继续写入原有数字字段，兼容历史手工数据。
   - 新增 `frontend/src/utils/teamSelectOptions.js` 和 `npm run test:selector`，覆盖选项生成、搜索匹配和 ID 归一化；`npm run test:selector`、`npm run build` 已通过。
 
+## 最近一次会话进展（2026-06-02 名称映射）
+- **stzb-helper-v2 全局 ID 名称映射**：
+  - 新增 `name_mapping` 表，由 `model.InitDB` 自动迁移，用于保存手工填写的武将、战法、宝物 ID 与名称。
+  - 新增 Wails 接口：`GetNameMappings`、`SaveNameMapping`、`DeleteNameMapping`；同一数据库里按“类型 + ID”唯一更新，填一次后后续同 ID 战报都会复用。
+  - 队伍查询页新增“名称映射”管理弹窗，可保存/编辑/删除映射，并自动列出当前查询结果中的未知武将、战法、宝物 ID。
+  - 队伍查询显示、编辑选择器和 Excel 导出均优先使用手工映射名称，再回退到内置 `cfg.js`，最后显示 `ID:xxxx`。
+  - 新增 `name_mapping_test.go` 和 `frontend/src/utils/nameMappings.js` 测试覆盖；`go test ./...`、`npm run test:selector`、`npm run build` 已通过。
+
 ## 最近一次会话进展（2026-04-26）
 - 确认了 AI 抽取使用通义千问 dashscope API（`qwen/qwen3.5-flash`）。
 - AI 抽取验证结果：群吕布（4 effects，skill_type 为空）、张机（2 effects，完整数据）、赵云（3 effects，skill_type 为空）。
