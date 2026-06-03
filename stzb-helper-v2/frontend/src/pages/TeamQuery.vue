@@ -3,10 +3,12 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { NCard, NButton, NInput, NEmpty, NSpin, NTag, NPagination, useMessage, NGrid, NGi, NPopconfirm, NModal } from 'naive-ui'
 import { GetHiddenPlayerTeams, GetMaterializedStatsStatus, GetPlayerTeam, GetPlayerTeamExport, GetPlayerTeamRelatedBattles, HidePlayerTeam, RebuildMaterializedStats, RestoreHiddenPlayerTeam } from '../../wailsjs/go/main/App'
 import { Download, RefreshCw, Search, Swords, Star, ScrollText, EyeOff, RotateCcw } from 'lucide-vue-next'
-import { herocfg, skillcfg } from '../cfg'
+import { herocfg, skillcfg, gear_cfg } from '../cfg'
 
 const heroMap = JSON.parse(herocfg)
 const skillMap = JSON.parse(skillcfg)
+const gearMap: Record<number, any> = {}
+gear_cfg.forEach((g: any) => { gearMap[g.gear_id] = g })
 
 const nmessage = useMessage()
 const loading = ref(false)
@@ -295,7 +297,7 @@ const doExport = async () => {
         }
 
         // 生成xlsx数据
-        const header = ['名字', '阵容红度', '大营武将', '中军武将', '前锋武将', '大营技能', '中军技能', '前锋技能', '记录类型', '记录时间']
+        const header = ['名字', '阵容红度', '大营武将', '中军武将', '前锋武将', '大营技能', '中军技能', '前锋技能', '大营宝物', '中军宝物', '前锋宝物', '记录类型', '记录时间']
         const rows = allList.map(r => {
             const hero1Info = getHeroInfo(r.hero1_id, r.hero1_star, r.hero1_level)
             const hero2Info = getHeroInfo(r.hero2_id, r.hero2_star, r.hero2_level)
@@ -304,10 +306,14 @@ const doExport = async () => {
             const skill1Info = getSkillInfo(skills[0]?.skills)
             const skill2Info = getSkillInfo(skills[1]?.skills)
             const skill3Info = getSkillInfo(skills[2]?.skills)
+            const gears = parseGearInfo(r.gear)
+            const gear1Info = gears[0] ? `${gears[0].name} Lv.${gears[0].level}` : ''
+            const gear2Info = gears[1] ? `${gears[1].name} Lv.${gears[1].level}` : ''
+            const gear3Info = gears[2] ? `${gears[2].name} Lv.${gears[2].level}` : ''
             const role = r.role === 'attack' ? '攻击时记录' : '防守时记录'
             const time = formatTime(r.time)
             return [r.player_name, r.total_star, hero1Info, hero2Info, hero3Info,
-                skill1Info, skill2Info, skill3Info, role, time]
+                skill1Info, skill2Info, skill3Info, gear1Info, gear2Info, gear3Info, role, time]
         })
 
         // 创建xlsx
@@ -323,6 +329,9 @@ const doExport = async () => {
             { wch: 22 }, // 大营技能
             { wch: 22 }, // 中军技能
             { wch: 22 }, // 前锋技能
+            { wch: 16 }, // 大营宝物
+            { wch: 16 }, // 中军宝物
+            { wch: 16 }, // 前锋宝物
             { wch: 12 }, // 记录类型
             { wch: 18 }, // 记录时间
         ]
@@ -422,6 +431,32 @@ const qualityColor = (q) => {
     return '#9ca3af'
 }
 
+const parseGearInfo = (gearStr) => {
+    if (!gearStr) return []
+    const slots = gearStr.split(';').filter(s => s.trim() !== '')
+    const result = []
+    for (let i = 0; i < slots.length; i++) {
+        const parts = slots[i].split(',')
+        if (parts.length !== 3) continue
+        const gearId = parseInt(parts[0])
+        const level = parseInt(parts[1])
+        if (gearId === 0) {
+            result.push(null)
+        } else {
+            const gear = gearMap[gearId]
+            result.push({ id: gearId, name: gear ? gear.name : `ID:${gearId}`, level })
+        }
+    }
+    return result
+}
+
+const getGearDisplay = (gearStr, index) => {
+    const gears = parseGearInfo(gearStr)
+    const g = gears[index]
+    if (!g) return ''
+    return `${g.name} Lv.${g.level}`
+}
+
 onMounted(async () => {
     await refreshStatsStatus()
     if (rebuilding.value) startStatsPolling()
@@ -498,6 +533,7 @@ onUnmounted(stopStatsPolling)
                         <tr>
                             <th>玩家</th>
                             <th>队伍 (大营→中军→前锋)</th>
+                            <th>宝物</th>
                             <th>红度</th>
                             <th>角色</th>
                             <th>时间</th>
@@ -529,6 +565,12 @@ onUnmounted(stopStatsPolling)
                                 </td>
                                 <td class="star-cell">
                                     <span class="star-value">{{ team.total_star }}</span>
+                                </td>
+                                <td class="gear-cell">
+                                    <div v-for="(g, gi) in parseGearInfo(team.gear)" :key="gi" class="gear-item">
+                                        <span v-if="g" class="gear-name">{{ g.name }} <span class="gear-level">Lv.{{ g.level }}</span></span>
+                                        <span v-else class="gear-empty">-</span>
+                                    </div>
                                 </td>
                                 <td class="role-cell">
                                     <n-tag :type="roleType(team.role)" size="small" :bordered="false">{{ roleLabel(team.role) }}</n-tag>
@@ -612,6 +654,9 @@ onUnmounted(stopStatsPolling)
                                         <span v-for="(skill, si) in (team.parsed_skill_info?.[i-1]?.skills || [])" :key="si" class="skill-tag" :style="{ borderColor: qualityColor(getSkillQuality(skill.id)) }">
                                             {{ getSkillName(skill.id) }}
                                         </span>
+                                    </div>
+                                    <div v-if="getGearDisplay(team.gear, i-1)" class="hero-gear">
+                                        <span class="gear-tag">{{ getGearDisplay(team.gear, i-1) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -809,6 +854,15 @@ onUnmounted(stopStatsPolling)
         .star-cell .star-value {
             font-weight: 600;
             color: #f59e0b;
+        }
+
+        .gear-cell {
+            font-size: 11px;
+
+            .gear-item { margin-bottom: 2px; }
+            .gear-name { color: #8b5cf6; }
+            .gear-level { color: #999; font-size: 10px; }
+            .gear-empty { color: #ddd; }
         }
 
         .role-cell .n-tag {
@@ -1045,6 +1099,19 @@ onUnmounted(stopStatsPolling)
                         border: 1px solid;
                         border-radius: 4px;
                         color: #666;
+                        white-space: nowrap;
+                    }
+                }
+
+                .hero-gear {
+                    .gear-tag {
+                        display: inline-block;
+                        padding: 2px 8px;
+                        font-size: 11px;
+                        background: #f5f3ff;
+                        border: 1px solid #8b5cf6;
+                        border-radius: 4px;
+                        color: #8b5cf6;
                         white-space: nowrap;
                     }
                 }
