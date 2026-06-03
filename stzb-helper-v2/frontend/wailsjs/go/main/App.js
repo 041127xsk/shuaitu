@@ -78,8 +78,16 @@ export function GetGroupWu() {
   return window['go']['main']['App']['GetGroupWu']();
 }
 
+export function GetHiddenPlayerTeams(arg1, arg2) {
+  return window['go']['main']['App']['GetHiddenPlayerTeams'](arg1, arg2);
+}
+
 export function GetLogs() {
   return window['go']['main']['App']['GetLogs']();
+}
+
+export function GetMaterializedStatsStatus() {
+  return window['go']['main']['App']['GetMaterializedStatsStatus']();
 }
 
 export function GetPlayerTeam(arg1, arg2, arg3, arg4, arg5) {
@@ -88,6 +96,10 @@ export function GetPlayerTeam(arg1, arg2, arg3, arg4, arg5) {
 
 export function GetPlayerTeamExport(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetPlayerTeamExport'](arg1, arg2, arg3);
+}
+
+export function GetPlayerTeamRelatedBattles(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
+  return window['go']['main']['App']['GetPlayerTeamRelatedBattles'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
 
 export function GetReportNumByTaskId(arg1) {
@@ -126,8 +138,20 @@ export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }
 
+export function HidePlayerTeam(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['main']['App']['HidePlayerTeam'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+}
+
 export function LoadConfig() {
   return window['go']['main']['App']['LoadConfig']();
+}
+
+export function RebuildMaterializedStats() {
+  return window['go']['main']['App']['RebuildMaterializedStats']();
+}
+
+export function RestoreHiddenPlayerTeam(arg1) {
+  return window['go']['main']['App']['RestoreHiddenPlayerTeam'](arg1);
 }
 
 export function SaveConfig(arg1) {

@@ -137,22 +137,37 @@
 
 ## P2 可选优化
 
-## P2-9 stzb-helper-v2 百万级战报物化统计性能优化 🔄 设计已批准
+## ~~P2-10 stzb-helper-v2 移除空白自动翻页侧边栏入口~~ ✅ 已完成 (2026-06-02)
+- `frontend/src/App.vue`：左侧控制栏移除“自动翻页”菜单项和未再使用的刷新图标导入。
+- `frontend_navigation_test.go`：新增静态检查，防止侧边栏再次暴露 `autoscroll` 空白入口。
+- 影响范围：只影响侧边栏入口展示；后台自动翻页 API、首页控制入口、配置字段和抓包逻辑均不变。
+
+## ~~P2-9 stzb-helper-v2 百万级战报物化统计性能优化~~ ✅ 已完成首版 (2026-06-02)
 背景：
 一赛季战报可能达到几十万到一百多万条。当前队伍查询和胜率统计虽然已有短时缓存和索引，但仍会在大库上重复扫描、排序和聚合原始 `battle_report`。
 
-推荐实现：
-- 新增 `player_team_snapshot` 派生表，让队伍查询优先读快照。
-- 新增 `team_winrate_stats` 派生表，胜率仍从原始战报规则计算，但实时/增量维护成预计算统计。
-- 新增 `materialized_state` 记录派生表版本、状态、最后处理的 `battle_id` 和重建进度。
-- 队伍查询先返回快照结果；展开某支队伍时，再异步从原始 `battle_report` 加载相关战报。
-- 支持从原始 `battle_report` 全量重建派生表，并支持采集时增量更新。
+已实现：
+- `model/materialized.go` 新增 `player_team_snapshot`、`team_winrate_stats`、`materialized_state` 表模型。
+- `materialized_stats.go` 支持全量重建、默认胜率阈值统计和新增战报后的增量更新。
+- `GetPlayerTeam` / `GetPlayerTeamExport` 优先读队伍快照，快照未 ready 时回退原始查询。
+- `GetTeamWinRate` / `GetTeamWinRateByTeam` 在默认阈值下优先读胜率派生表，非默认阈值回退原始查询。
+- `GetPlayerTeamRelatedBattles` 支持队伍查询结果展开后按需加载相关原始战报。
+- 前端队伍查询页和胜率页新增“重建索引”入口，并显示“统计索引 / 原始查询 / 索引未就绪”状态。
+- 新增 Go 单元测试覆盖快照规则、胜率规则、重建写表和攻守结果标签。
+- `materialized_team_exclusion` 保存队伍查询隐藏标记；队伍快照查询和默认阈值胜率派生查询会同步排除隐藏队伍。
+- 队伍查询页新增“隐藏”按钮；该操作只写排除标记，不删除原始 `battle_report`。
+- `GetHiddenPlayerTeams` / `RestoreHiddenPlayerTeam` 支持隐藏队伍分页查看和恢复。
+- 队伍查询页新增“隐藏管理”弹窗；队伍分组和战法解析改为当前页缓存，相关战报再次展开不重复请求。
+- 队伍胜率页新增展示模型预处理，移除重复内联 base64 星星图片，降低大图模式渲染成本。
+- 全量重建改为按批读取 `battle_report` 并用汇总器累积结果，不再保留完整原始战报数组。
+- 全量重建先写 `player_team_snapshot_rebuild` / `team_winrate_stats_rebuild` 临时表，再用短事务替换正式表。
+- `model.InitDB` 新增 SQLite 稳定性参数和相关战报/队伍胜率派生查询索引，降低百万级库重建和展开战报时的卡顿风险。
+- 新增 `STZB_PERF_DB` 性能探针；本机 74,326 条战报基线为：重建约 3.73 秒，队伍查询约 16 ms，胜率查询约 35 ms，相关战报展开约 1 ms。
 
-验收标准：
-- 百万级库下队伍查询不再依赖全表临时去重。
-- 胜率页默认读预计算统计，数据规则仍以 `battle_report.result` 为准。
-- 新抓取战报能更新派生统计，异常时可标记 stale 并重建。
-- 单支队伍可展开查看最近相关原始战报。
+后续可优化：
+- 用真实百万级赛季库重新跑 `STZB_PERF_DB` 性能探针，记录重建耗时和页面查询耗时。
+- 胜率派生表首版覆盖默认阈值（30 级、20000 兵力）；更多阈值可扩展为多档物化或规范化事实表。
+- 快照重建仍需保留有效队伍候选用于“同玩家共享 2 个武将旧队替换”规则；若赛季数据继续变大，可继续把这部分改成按玩家/阵容的在线淘汰结构。
 
 设计文档：
 - `stzb-helper-v2/docs/superpowers/specs/2026-06-02-performance-materialized-stats-design.md`
@@ -183,10 +198,12 @@
 背景：
 `build/bin` 里已有多个历史 exe，本地调试方便但长期容易混淆。
 
+当前状态：
+- 已执行 `wails build -clean`，`stzb-helper-v2/build/bin` 当前只保留最新 `stzbHelper-wails.exe`。
+
 推荐实现：
-- 本地仅保留 `stzbHelper-wails.exe` 和最近一个备份 exe。
 - GitHub 使用 Releases 上传可执行文件，Git 只保存源码。
-- 在 `RUNBOOK.md` 记录发布步骤。
+- 在 `RUNBOOK.md` 记录正式发布步骤和版本命名规则。
 
 ## P2-1 增加 README 和示例命令
 背景：

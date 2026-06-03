@@ -340,6 +340,9 @@ func parseBattleData(data []byte) {
 			} else {
 				battleCount++
 				recordAutoScrollBattleID(report.BattleId)
+				if err := applyBattleReportToMaterializedStats(report); err != nil {
+					log.Printf("更新统计索引失败，已保留原始战报 battle_id=%d: %v", report.BattleId, err)
+				}
 				invalidatePlayerTeamQueryCache()
 				invalidateQueryCache(&teamWinRateQueryCache)
 				fmt.Printf("成功保存战斗报告, ID: %d\n", report.BattleId)

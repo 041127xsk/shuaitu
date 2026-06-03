@@ -12,6 +12,7 @@ import (
 
 type playerTeam struct {
 	PlayerName   string `json:"player_name"`
+	UnionName    string `json:"union_name"`
 	BattleID     int    `json:"battle_id"`
 	Hero1ID      int    `json:"hero1_id"`
 	Hero2ID      int    `json:"hero2_id"`
@@ -96,6 +97,7 @@ func queryPlayerTeamCandidates(name, uname, idu string) ([]playerTeam, error) {
 	query := fmt.Sprintf(`
 		SELECT
 			attack_name AS player_name,
+			attack_union_name AS union_name,
 			attack_hero1_id AS hero1_id,
 			attack_hero2_id AS hero2_id,
 			attack_hero3_id AS hero3_id,
@@ -119,6 +121,7 @@ func queryPlayerTeamCandidates(name, uname, idu string) ([]playerTeam, error) {
 		UNION ALL
 		SELECT
 			defend_name AS player_name,
+			defend_union_name AS union_name,
 			defend_hero1_id AS hero1_id,
 			defend_hero2_id AS hero2_id,
 			defend_hero3_id AS hero3_id,
@@ -160,6 +163,7 @@ func buildPlayerTeamWhere(side, name, uname, idu string) ([]string, []interface{
 		"npc = 0",
 		"all_skill_info IS NOT NULL",
 		"all_skill_info != ''",
+		buildPlayerTeamExclusionWhere(side),
 	}
 	args := []interface{}{}
 
@@ -177,6 +181,16 @@ func buildPlayerTeamWhere(side, name, uname, idu string) ([]string, []interface{
 	}
 
 	return where, args
+}
+
+func buildPlayerTeamExclusionWhere(side string) string {
+	return fmt.Sprintf(`NOT EXISTS (
+		SELECT 1 FROM materialized_team_exclusion e
+		WHERE e.lineup_key = printf('%%d_%%d_%%d', %[1]s_hero1_id, %[1]s_hero2_id, %[1]s_hero3_id)
+			AND (e.player_name = '' OR e.player_name = %[1]s_name)
+			AND (e.role = '' OR e.role = '%[1]s')
+			AND (e.idu = '' OR e.idu = %[1]s_idu)
+	)`, side)
 }
 
 func buildEffectivePlayerTeams(rows []playerTeam) []playerTeam {

@@ -39,11 +39,17 @@ export function GetDbList():Promise<string>;
 
 export function GetGroupWu():Promise<string>;
 
+export function GetHiddenPlayerTeams(arg1:number,arg2:number):Promise<string>;
+
 export function GetLogs():Promise<string>;
+
+export function GetMaterializedStatsStatus():Promise<string>;
 
 export function GetPlayerTeam(arg1:string,arg2:string,arg3:string,arg4:number,arg5:number):Promise<string>;
 
 export function GetPlayerTeamExport(arg1:string,arg2:string,arg3:string):Promise<string>;
+
+export function GetPlayerTeamRelatedBattles(arg1:string,arg2:string,arg3:string,arg4:number,arg5:number,arg6:number,arg7:number,arg8:number):Promise<string>;
 
 export function GetReportNumByTaskId(arg1:number):Promise<string>;
 
@@ -63,7 +69,13 @@ export function GetVersion():Promise<string>;
 
 export function Greet(arg1:string):Promise<string>;
 
+export function HidePlayerTeam(arg1:string,arg2:string,arg3:string,arg4:number,arg5:number,arg6:number,arg7:string):Promise<string>;
+
 export function LoadConfig():Promise<string>;
+
+export function RebuildMaterializedStats():Promise<string>;
+
+export function RestoreHiddenPlayerTeam(arg1:number):Promise<string>;
 
 export function SaveConfig(arg1:string):Promise<string>;
 

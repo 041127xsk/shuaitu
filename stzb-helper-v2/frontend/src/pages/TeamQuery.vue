@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { NCard, NButton, NInput, NEmpty, NSpin, NTag, NPagination, useMessage, NGrid, NGi } from 'naive-ui'
-import { GetPlayerTeam, GetPlayerTeamExport, GetTeamWinRateByTeam } from '../../wailsjs/go/main/App'
-import { Search, Swords, Star, Filter, Download } from 'lucide-vue-next'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { NCard, NButton, NInput, NEmpty, NSpin, NTag, NPagination, useMessage, NGrid, NGi, NPopconfirm, NModal } from 'naive-ui'
+import { GetHiddenPlayerTeams, GetMaterializedStatsStatus, GetPlayerTeam, GetPlayerTeamExport, GetPlayerTeamRelatedBattles, HidePlayerTeam, RebuildMaterializedStats, RestoreHiddenPlayerTeam } from '../../wailsjs/go/main/App'
+import { Download, RefreshCw, Search, Swords, Star, ScrollText, EyeOff, RotateCcw } from 'lucide-vue-next'
 import { herocfg, skillcfg } from '../cfg'
 
 const heroMap = JSON.parse(herocfg)
@@ -23,20 +23,36 @@ const pageSize = ref(20)
 const total = ref(0)
 const queryMs = ref<number | null>(null)
 const cacheHit = ref(false)
+const source = ref('')
+const statsReady = ref(false)
+const rebuilding = ref(false)
+const rebuildProgressText = ref('')
+const relatedBattles = ref<Record<string, { loading: boolean, expanded: boolean, fetched: boolean, list: any[], total: number }>>({})
+const hidingKeys = ref<Record<string, boolean>>({})
+const hiddenModalVisible = ref(false)
+const hiddenLoading = ref(false)
+const hiddenRows = ref<any[]>([])
+const hiddenPage = ref(1)
+const hiddenPageSize = ref(10)
+const hiddenTotal = ref(0)
+const restoringHiddenKeys = ref<Record<string, boolean>>({})
+let statsPollTimer: number | undefined
 
 const doSearch = (newPage?: number) => {
     if (typeof newPage === 'number') page.value = newPage
     else page.value = 1
     loading.value = true
     results.value = []
+    relatedBattles.value = {}
     hasSearched.value = true
     GetPlayerTeam(searchName.value, searchUnion.value, searchIdu.value, page.value, pageSize.value).then(v => {
         let resp = JSON.parse(v)
         if (resp.code == 200) {
-            results.value = resp.data.list || []
+            results.value = (resp.data.list || []).map(prepareTeamDisplay)
             total.value = resp.data.total || 0
             queryMs.value = resp.data.query_ms ?? null
             cacheHit.value = !!resp.data.cache_hit
+            source.value = resp.data.source || ''
         } else {
             nmessage.error(resp.msg)
         }
@@ -45,6 +61,197 @@ const doSearch = (newPage?: number) => {
     }).finally(() => {
         loading.value = false
     })
+}
+
+const refreshStatsStatus = async () => {
+    try {
+        const resp = JSON.parse(await GetMaterializedStatsStatus())
+        if (resp.code !== 200) {
+            statsReady.value = false
+            return
+        }
+        const wasRebuilding = rebuilding.value
+        const states = resp.data.states || []
+        const active = states.find(s => s.status === 'building') || states[0]
+        const isBuilding = !!resp.data.rebuilding || states.some(s => s.status === 'building')
+        statsReady.value = !!resp.data.team_ready
+        rebuilding.value = isBuilding
+        rebuildProgressText.value = formatRebuildProgress(active)
+        if (isBuilding) {
+            startStatsPolling()
+        } else {
+            stopStatsPolling()
+            if (wasRebuilding && hasSearched.value) doSearch(page.value)
+        }
+    } catch {
+        statsReady.value = false
+        rebuilding.value = false
+        stopStatsPolling()
+    }
+}
+
+const rebuildStats = async () => {
+    rebuilding.value = true
+    rebuildProgressText.value = '准备重建...'
+    try {
+        const resp = JSON.parse(await RebuildMaterializedStats())
+        if (resp.code === 200) {
+            nmessage.success(resp.msg || '统计索引已开始后台重建')
+            await refreshStatsStatus()
+            startStatsPolling()
+        } else {
+            nmessage.error(resp.msg)
+            rebuilding.value = false
+        }
+    } catch (e) {
+        nmessage.error('重建失败: ' + e)
+        rebuilding.value = false
+    }
+}
+
+const formatRebuildProgress = (state) => {
+    if (!state || state.status !== 'building') return ''
+    const total = Number(state.battle_report_count || 0)
+    const processed = Number(state.processed_report_count || 0)
+    if (total <= 0) return '重建中...'
+    const percent = Math.min(100, Math.floor(processed / total * 100))
+    return `重建中 ${processed}/${total} (${percent}%)`
+}
+
+const startStatsPolling = () => {
+    if (statsPollTimer) return
+    statsPollTimer = window.setInterval(refreshStatsStatus, 1000)
+}
+
+const stopStatsPolling = () => {
+    if (!statsPollTimer) return
+    window.clearInterval(statsPollTimer)
+    statsPollTimer = undefined
+}
+
+const teamKey = (team) => `${team.player_name}|${team.role}|${team.idu}|${team.hero1_id}|${team.hero2_id}|${team.hero3_id}`
+
+const prepareTeamDisplay = (team) => ({
+    ...team,
+    parsed_skill_info: parseSkillInfo(team.all_skill_info, team.role),
+})
+
+const groupedPlayerTeams = computed(() => {
+    const map: Record<string, any[]> = {}
+    results.value.forEach(r => {
+        if (!map[r.player_name]) {
+            map[r.player_name] = []
+        }
+        map[r.player_name].push(r)
+    })
+    return map
+})
+
+const hideTeam = async (team) => {
+    const key = teamKey(team)
+    hidingKeys.value = { ...hidingKeys.value, [key]: true }
+    try {
+        const resp = JSON.parse(await HidePlayerTeam(
+            team.player_name,
+            team.role,
+            team.idu || '',
+            team.hero1_id,
+            team.hero2_id,
+            team.hero3_id,
+            team.all_skill_info || '',
+        ))
+        if (resp.code === 200) {
+            nmessage.success(resp.msg || '已隐藏该队伍，原始战报未被删除')
+            results.value = results.value.filter(item => teamKey(item) !== key)
+            total.value = Math.max(0, total.value - 1)
+            const nextBattles = { ...relatedBattles.value }
+            delete nextBattles[key]
+            relatedBattles.value = nextBattles
+            if (results.value.length === 0 && total.value > 0) doSearch(page.value)
+        } else {
+            nmessage.error(resp.msg)
+        }
+    } catch (e) {
+        nmessage.error('隐藏失败: ' + e)
+    } finally {
+        const next = { ...hidingKeys.value }
+        delete next[key]
+        hidingKeys.value = next
+    }
+}
+
+const toggleRelatedBattles = async (team) => {
+    const key = teamKey(team)
+    const current = relatedBattles.value[key]
+    if (current?.fetched) {
+        relatedBattles.value[key] = { ...current, expanded: !current.expanded }
+        return
+    }
+    relatedBattles.value[key] = { loading: true, expanded: true, fetched: false, list: current?.list || [], total: current?.total || 0 }
+    try {
+        const resp = JSON.parse(await GetPlayerTeamRelatedBattles(team.player_name, team.role, team.idu || '', team.hero1_id, team.hero2_id, team.hero3_id, 1, 20))
+        if (resp.code === 200) {
+            relatedBattles.value[key] = { loading: false, expanded: true, fetched: true, list: resp.data.list || [], total: resp.data.total || 0 }
+        } else {
+            relatedBattles.value[key] = { loading: false, expanded: false, fetched: false, list: [], total: 0 }
+            nmessage.error(resp.msg)
+        }
+    } catch (e) {
+        relatedBattles.value[key] = { loading: false, expanded: false, fetched: false, list: [], total: 0 }
+        nmessage.error('战报加载失败: ' + e)
+    }
+}
+
+const openHiddenManager = async () => {
+    hiddenModalVisible.value = true
+    hiddenPage.value = 1
+    await loadHiddenTeams()
+}
+
+const loadHiddenTeams = async (newPage?: number) => {
+    if (typeof newPage === 'number') hiddenPage.value = newPage
+    hiddenLoading.value = true
+    try {
+        const resp = JSON.parse(await GetHiddenPlayerTeams(hiddenPage.value, hiddenPageSize.value))
+        if (resp.code === 200) {
+            hiddenRows.value = resp.data.list || []
+            hiddenTotal.value = resp.data.total || 0
+        } else {
+            nmessage.error(resp.msg)
+        }
+    } catch (e) {
+        nmessage.error('隐藏列表加载失败: ' + e)
+    } finally {
+        hiddenLoading.value = false
+    }
+}
+
+const restoreHiddenTeam = async (row) => {
+    const key = String(row.id)
+    restoringHiddenKeys.value = { ...restoringHiddenKeys.value, [key]: true }
+    try {
+        const resp = JSON.parse(await RestoreHiddenPlayerTeam(row.id))
+        if (resp.code === 200) {
+            nmessage.success(resp.msg || '已恢复该队伍，原始战报未被删除')
+            await loadHiddenTeams(hiddenPage.value)
+            if (hasSearched.value) doSearch(page.value)
+        } else {
+            nmessage.error(resp.msg)
+        }
+    } catch (e) {
+        nmessage.error('恢复失败: ' + e)
+    } finally {
+        const next = { ...restoringHiddenKeys.value }
+        delete next[key]
+        restoringHiddenKeys.value = next
+    }
+}
+
+const resultType = (label) => {
+    if (label === '胜') return 'success'
+    if (label === '负') return 'error'
+    if (label === '平') return 'warning'
+    return 'default'
 }
 
 const exporting = ref(false)
@@ -205,17 +412,6 @@ const formatTime = (ts) => {
     return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-const getPlayerTeams = (): Record<string, any[]> => {
-    const map: Record<string, any[]> = {}
-    results.value.forEach(r => {
-        if (!map[r.player_name]) {
-            map[r.player_name] = []
-        }
-        map[r.player_name].push(r)
-    })
-    return map
-}
-
 const roleLabel = (role) => role === 'attack' ? '攻' : '守'
 const roleType = (role) => role === 'attack' ? 'error' : 'info'
 
@@ -225,6 +421,12 @@ const qualityColor = (q) => {
     if (q === 'B') return '#10b981'
     return '#9ca3af'
 }
+
+onMounted(async () => {
+    await refreshStatsStatus()
+    if (rebuilding.value) startStatsPolling()
+})
+onUnmounted(stopStatsPolling)
 </script>
 
 <template>
@@ -249,6 +451,14 @@ const qualityColor = (q) => {
                 <template #icon><Download :size="16" /></template>
                 导出Excel
             </n-button>
+            <n-button @click="rebuildStats()" :loading="rebuilding">
+                <template #icon><RefreshCw :size="16" /></template>
+                重建索引
+            </n-button>
+            <n-button @click="openHiddenManager()">
+                <template #icon><EyeOff :size="16" /></template>
+                隐藏管理
+            </n-button>
             <div class="view-toggle">
                 <n-button-group size="small">
                     <n-button :type="viewMode === 'list' ? 'primary' : 'default'" @click="viewMode = 'list'">列表</n-button>
@@ -270,11 +480,15 @@ const qualityColor = (q) => {
 
         <div v-else-if="results.length > 0" class="results">
             <div class="result-stats">
-                <span>{{ Object.keys(getPlayerTeams()).length }} 位玩家</span>
+                <span>{{ Object.keys(groupedPlayerTeams).length }} 位玩家</span>
                 <span>{{ results.length }} 支队伍</span>
                 <span>共 {{ total }} 条</span>
                 <span v-if="queryMs !== null">耗时 {{ queryMs }}ms</span>
                 <span v-if="cacheHit">命中缓存</span>
+                <span v-if="source === 'materialized'">统计索引</span>
+                <span v-else-if="source === 'raw'">原始查询</span>
+                <span v-if="!statsReady">索引未就绪</span>
+                <span v-if="rebuildProgressText">{{ rebuildProgressText }}</span>
             </div>
 
             <!-- 紧凑模式 - 表格视图 -->
@@ -287,45 +501,80 @@ const qualityColor = (q) => {
                             <th>红度</th>
                             <th>角色</th>
                             <th>时间</th>
+                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="team in results" :key="team.battle_id + team.role">
-                            <td class="player-cell">
-                                <span class="player-name">{{ team.player_name }}</span>
-                                <span class="player-idu">ID:{{ team.idu }}</span>
-                            </td>
-                            <td class="team-cell">
-                                <div class="hero-mini">
-                                    <img v-if="team.hero1_id" :src="`https://g0.gph.netease.com/ngsocial/community/stzb/cn/cards/cut/card_small_${getHeroIcon(team.hero1_id)}.jpg?gameid=g10`" @error="($event.target as any).style.display='none'" />
-                                    <span class="hero-mini-name">{{ getHeroName(team.hero1_id) }}<span class="hero-mini-type">{{ getHeroType(team.hero1_id) }}</span></span>
-                                </div>
-                                <span class="team-arrow">→</span>
-                                <div class="hero-mini">
-                                    <img v-if="team.hero2_id" :src="`https://g0.gph.netease.com/ngsocial/community/stzb/cn/cards/cut/card_small_${getHeroIcon(team.hero2_id)}.jpg?gameid=g10`" @error="($event.target as any).style.display='none'" />
-                                    <span class="hero-mini-name">{{ getHeroName(team.hero2_id) }}<span class="hero-mini-type">{{ getHeroType(team.hero2_id) }}</span></span>
-                                </div>
-                                <span class="team-arrow">→</span>
-                                <div class="hero-mini">
-                                    <img v-if="team.hero3_id" :src="`https://g0.gph.netease.com/ngsocial/community/stzb/cn/cards/cut/card_small_${getHeroIcon(team.hero3_id)}.jpg?gameid=g10`" @error="($event.target as any).style.display='none'" />
-                                    <span class="hero-mini-name">{{ getHeroName(team.hero3_id) }}<span class="hero-mini-type">{{ getHeroType(team.hero3_id) }}</span></span>
-                                </div>
-                            </td>
-                            <td class="star-cell">
-                                <span class="star-value">{{ team.total_star }}</span>
-                            </td>
-                            <td class="role-cell">
-                                <n-tag :type="roleType(team.role)" size="small" :bordered="false">{{ roleLabel(team.role) }}</n-tag>
-                            </td>
-                            <td class="time-cell">{{ formatTime(team.time) }}</td>
-                        </tr>
+                        <template v-for="team in results" :key="team.battle_id + team.role">
+                            <tr>
+                                <td class="player-cell">
+                                    <span class="player-name">{{ team.player_name }}</span>
+                                    <span class="player-idu">ID:{{ team.idu }}</span>
+                                </td>
+                                <td class="team-cell">
+                                    <div class="hero-mini">
+                                        <img v-if="team.hero1_id" :src="`https://g0.gph.netease.com/ngsocial/community/stzb/cn/cards/cut/card_small_${getHeroIcon(team.hero1_id)}.jpg?gameid=g10`" @error="($event.target as any).style.display='none'" />
+                                        <span class="hero-mini-name">{{ getHeroName(team.hero1_id) }}<span class="hero-mini-type">{{ getHeroType(team.hero1_id) }}</span></span>
+                                    </div>
+                                    <span class="team-arrow">→</span>
+                                    <div class="hero-mini">
+                                        <img v-if="team.hero2_id" :src="`https://g0.gph.netease.com/ngsocial/community/stzb/cn/cards/cut/card_small_${getHeroIcon(team.hero2_id)}.jpg?gameid=g10`" @error="($event.target as any).style.display='none'" />
+                                        <span class="hero-mini-name">{{ getHeroName(team.hero2_id) }}<span class="hero-mini-type">{{ getHeroType(team.hero2_id) }}</span></span>
+                                    </div>
+                                    <span class="team-arrow">→</span>
+                                    <div class="hero-mini">
+                                        <img v-if="team.hero3_id" :src="`https://g0.gph.netease.com/ngsocial/community/stzb/cn/cards/cut/card_small_${getHeroIcon(team.hero3_id)}.jpg?gameid=g10`" @error="($event.target as any).style.display='none'" />
+                                        <span class="hero-mini-name">{{ getHeroName(team.hero3_id) }}<span class="hero-mini-type">{{ getHeroType(team.hero3_id) }}</span></span>
+                                    </div>
+                                </td>
+                                <td class="star-cell">
+                                    <span class="star-value">{{ team.total_star }}</span>
+                                </td>
+                                <td class="role-cell">
+                                    <n-tag :type="roleType(team.role)" size="small" :bordered="false">{{ roleLabel(team.role) }}</n-tag>
+                                </td>
+                                <td class="time-cell">{{ formatTime(team.time) }}</td>
+                                <td>
+                                    <div class="action-cell">
+                                        <n-button size="tiny" quaternary @click="toggleRelatedBattles(team)">
+                                            <template #icon><ScrollText :size="14" /></template>
+                                            战报
+                                        </n-button>
+                                        <n-popconfirm @positive-click="hideTeam(team)">
+                                            <template #trigger>
+                                                <n-button size="tiny" quaternary type="warning" :loading="!!hidingKeys[teamKey(team)]">
+                                                    <template #icon><EyeOff :size="14" /></template>
+                                                    隐藏
+                                                </n-button>
+                                            </template>
+                                            隐藏后队伍查询和胜率查询都会排除这支队伍，确定吗？
+                                        </n-popconfirm>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="relatedBattles[teamKey(team)]?.expanded || relatedBattles[teamKey(team)]?.loading">
+                                <td colspan="6">
+                                    <div class="related-battles">
+                                        <div v-if="relatedBattles[teamKey(team)]?.loading" class="related-loading">加载中...</div>
+                                        <div v-else class="related-list">
+                                            <div class="related-item" v-for="battle in relatedBattles[teamKey(team)]?.list || []" :key="battle.battle_id">
+                                                <n-tag size="tiny" :type="resultType(battle.result_label)" :bordered="false">{{ battle.result_label }}</n-tag>
+                                                <span>{{ formatTime(battle.time) }}</span>
+                                                <span>对手 {{ battle.opponent_name || '-' }}</span>
+                                                <span>{{ battle.attack_hp }} / {{ battle.defend_hp }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
                     </tbody>
                 </table>
             </div>
 
             <!-- 列表模式 - 卡片视图 -->
             <div v-else class="list-view">
-                <div class="player-group" v-for="(teams, playerName) in getPlayerTeams()" :key="playerName">
+                <div class="player-group" v-for="(teams, playerName) in groupedPlayerTeams" :key="playerName">
                     <div class="player-header">
                         <span class="player-title">{{ playerName }}</span>
                         <span class="player-count">{{ teams.length }} 支队伍</span>
@@ -337,6 +586,19 @@ const qualityColor = (q) => {
                                 <span class="team-idu">ID {{ team.idu }}</span>
                                 <span class="team-star"><Star :size="12" /> {{ team.total_star }}红</span>
                                 <span class="team-time">{{ formatTime(team.time) }}</span>
+                                <n-button size="tiny" quaternary @click="toggleRelatedBattles(team)">
+                                    <template #icon><ScrollText :size="14" /></template>
+                                    战报
+                                </n-button>
+                                <n-popconfirm @positive-click="hideTeam(team)">
+                                    <template #trigger>
+                                        <n-button size="tiny" quaternary type="warning" :loading="!!hidingKeys[teamKey(team)]">
+                                            <template #icon><EyeOff :size="14" /></template>
+                                            隐藏
+                                        </n-button>
+                                    </template>
+                                    隐藏后队伍查询和胜率查询都会排除这支队伍，确定吗？
+                                </n-popconfirm>
                             </div>
                             <div class="team-heroes">
                                 <div class="hero-card" v-for="i in 3" :key="i">
@@ -347,9 +609,20 @@ const qualityColor = (q) => {
                                         <span class="hero-level">Lv.{{ team[`hero${i}_level`] }}</span>
                                     </div>
                                     <div v-if="team.all_skill_info" class="hero-skills">
-                                        <span v-for="(skill, si) in (parseSkillInfo(team.all_skill_info, team.role)[i-1]?.skills || [])" :key="si" class="skill-tag" :style="{ borderColor: qualityColor(getSkillQuality(skill.id)) }">
+                                        <span v-for="(skill, si) in (team.parsed_skill_info?.[i-1]?.skills || [])" :key="si" class="skill-tag" :style="{ borderColor: qualityColor(getSkillQuality(skill.id)) }">
                                             {{ getSkillName(skill.id) }}
                                         </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="relatedBattles[teamKey(team)]?.expanded || relatedBattles[teamKey(team)]?.loading" class="related-battles">
+                                <div v-if="relatedBattles[teamKey(team)]?.loading" class="related-loading">加载中...</div>
+                                <div v-else class="related-list">
+                                    <div class="related-item" v-for="battle in relatedBattles[teamKey(team)]?.list || []" :key="battle.battle_id">
+                                        <n-tag size="tiny" :type="resultType(battle.result_label)" :bordered="false">{{ battle.result_label }}</n-tag>
+                                        <span>{{ formatTime(battle.time) }}</span>
+                                        <span>对手 {{ battle.opponent_name || '-' }}</span>
+                                        <span>兵力 {{ battle.attack_hp }} / {{ battle.defend_hp }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -358,6 +631,38 @@ const qualityColor = (q) => {
                 </div>
             </div>
         </div>
+
+        <n-modal v-model:show="hiddenModalVisible" preset="card" title="隐藏队伍管理" class="hidden-modal">
+            <div class="hidden-manager">
+                <div v-if="hiddenLoading" class="hidden-loading">
+                    <n-spin size="small" />
+                    <span>加载中...</span>
+                </div>
+                <n-empty v-else-if="hiddenRows.length === 0" description="暂无隐藏队伍" />
+                <div v-else class="hidden-list">
+                    <div class="hidden-item" v-for="row in hiddenRows" :key="row.id">
+                        <div class="hidden-main">
+                            <div class="hidden-title">
+                                <span>{{ row.player_name }}</span>
+                                <n-tag :type="roleType(row.role)" size="tiny" :bordered="false">{{ roleLabel(row.role) }}</n-tag>
+                                <span>ID {{ row.idu || '-' }}</span>
+                            </div>
+                            <div class="hidden-heroes">
+                                {{ getHeroName(row.hero1_id) }} / {{ getHeroName(row.hero2_id) }} / {{ getHeroName(row.hero3_id) }}
+                            </div>
+                            <div class="hidden-time">{{ formatTime(row.created_at) }}</div>
+                        </div>
+                        <n-button size="small" quaternary type="primary" :loading="!!restoringHiddenKeys[String(row.id)]" @click="restoreHiddenTeam(row)">
+                            <template #icon><RotateCcw :size="14" /></template>
+                            恢复
+                        </n-button>
+                    </div>
+                </div>
+                <div v-if="hiddenTotal > hiddenPageSize" class="hidden-pagination">
+                    <n-pagination v-model:page="hiddenPage" :page-size="hiddenPageSize" :item-count="hiddenTotal" :on-update:page="loadHiddenTeams" />
+                </div>
+            </div>
+        </n-modal>
     </div>
 </template>
 
@@ -514,7 +819,109 @@ const qualityColor = (q) => {
             color: #999;
             font-size: 12px;
         }
+
+        .action-cell {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
     }
+}
+
+.related-battles {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 6px;
+
+    .related-loading {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .related-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .related-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: #666;
+        flex-wrap: wrap;
+    }
+}
+
+.hidden-modal {
+    max-width: 720px;
+}
+
+.hidden-manager {
+    min-height: 160px;
+}
+
+.hidden-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 0;
+    color: #999;
+}
+
+.hidden-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hidden-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.hidden-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hidden-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    flex-wrap: wrap;
+}
+
+.hidden-heroes {
+    font-size: 13px;
+    color: #666;
+}
+
+.hidden-time {
+    font-size: 12px;
+    color: #999;
+}
+
+.hidden-pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
 }
 
 // 列表卡片模式

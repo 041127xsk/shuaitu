@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, h, watch } from 'vue'
+import { ref, computed, h, watch, onMounted, onUnmounted } from 'vue'
 import { NCard, NButton, NInput, NInputNumber, NEmpty, NSpin, NTag, NPagination, NDataTable, useMessage } from 'naive-ui'
-import { GetTeamWinRate, GetTeamWinRateByTeam } from '../../wailsjs/go/main/App'
-import { Search, Swords, Image, Table, Users, Layers } from 'lucide-vue-next'
+import { GetMaterializedStatsStatus, GetTeamWinRate, GetTeamWinRateByTeam, RebuildMaterializedStats } from '../../wailsjs/go/main/App'
+import { Search, Image, Users, RefreshCw } from 'lucide-vue-next'
 import { herocfg, skillcfg } from '../cfg'
 
 const heroMap = JSON.parse(herocfg)
@@ -26,6 +26,11 @@ const pageSize = ref(50)
 const total = ref(0)
 const queryMs = ref<number | null>(null)
 const cacheHit = ref(false)
+const source = ref('')
+const statsReady = ref(false)
+const rebuilding = ref(false)
+const rebuildProgressText = ref('')
+let statsPollTimer: number | undefined
 
 const doSearch = (newPage?: number) => {
     if (typeof newPage === 'number') page.value = newPage
@@ -37,10 +42,11 @@ const doSearch = (newPage?: number) => {
     apiFn(searchName.value, searchUnion.value, searchIdu.value, page.value, pageSize.value, minLevel.value, minHp.value).then(v => {
         let resp = JSON.parse(v)
         if (resp.code == 200) {
-            results.value = resp.data.list || []
+            results.value = (resp.data.list || []).map(prepareWinRateDisplay)
             total.value = resp.data.total || 0
             queryMs.value = resp.data.query_ms ?? null
             cacheHit.value = !!resp.data.cache_hit
+            source.value = resp.data.source || ''
         } else {
             nmessage.error(resp.msg)
         }
@@ -49,6 +55,72 @@ const doSearch = (newPage?: number) => {
     }).finally(() => {
         loading.value = false
     })
+}
+
+const refreshStatsStatus = async () => {
+    try {
+        const resp = JSON.parse(await GetMaterializedStatsStatus())
+        if (resp.code !== 200) {
+            statsReady.value = false
+            return
+        }
+        const wasRebuilding = rebuilding.value
+        const states = resp.data.states || []
+        const active = states.find(s => s.status === 'building') || states[0]
+        const isBuilding = !!resp.data.rebuilding || states.some(s => s.status === 'building')
+        statsReady.value = !!resp.data.winrate_ready
+        rebuilding.value = isBuilding
+        rebuildProgressText.value = formatRebuildProgress(active)
+        if (isBuilding) {
+            startStatsPolling()
+        } else {
+            stopStatsPolling()
+            if (wasRebuilding && hasSearched.value) doSearch(page.value)
+        }
+    } catch {
+        statsReady.value = false
+        rebuilding.value = false
+        stopStatsPolling()
+    }
+}
+
+const rebuildStats = async () => {
+    rebuilding.value = true
+    rebuildProgressText.value = '准备重建...'
+    try {
+        const resp = JSON.parse(await RebuildMaterializedStats())
+        if (resp.code === 200) {
+            nmessage.success(resp.msg || '统计索引已开始后台重建')
+            await refreshStatsStatus()
+            startStatsPolling()
+        } else {
+            nmessage.error(resp.msg)
+            rebuilding.value = false
+        }
+    } catch (e) {
+        nmessage.error('重建失败: ' + e)
+        rebuilding.value = false
+    }
+}
+
+const formatRebuildProgress = (state) => {
+    if (!state || state.status !== 'building') return ''
+    const total = Number(state.battle_report_count || 0)
+    const processed = Number(state.processed_report_count || 0)
+    if (total <= 0) return '重建中...'
+    const percent = Math.min(100, Math.floor(processed / total * 100))
+    return `重建中 ${processed}/${total} (${percent}%)`
+}
+
+const startStatsPolling = () => {
+    if (statsPollTimer) return
+    statsPollTimer = window.setInterval(refreshStatsStatus, 1000)
+}
+
+const stopStatsPolling = () => {
+    if (!statsPollTimer) return
+    window.clearInterval(statsPollTimer)
+    statsPollTimer = undefined
 }
 
 const resolveHeroId = (id) => {
@@ -103,6 +175,48 @@ const getSkillType = (id) => {
     if (!id) return ''
     const skill = skillMap[String(id)]
     return skill ? skill.type : ''
+}
+
+const prepareWinRateDisplay = (team) => {
+    const parsedSkillInfo = parseSkillInfo(team.all_skill_info, team.role)
+    const enrichedSkillInfo = parsedSkillInfo.map(group => ({
+        ...group,
+        skills: group.skills.map(skill => ({
+            ...skill,
+            name: getSkillName(skill.id),
+            quality: getSkillQuality(skill.id),
+            type: getSkillType(skill.id),
+        })),
+    }))
+    const heroes = [1, 2, 3].map(i => {
+        const id = team[`hero${i}_id`]
+        const star = Number(team[`hero${i}_star`] || 0)
+        const quality = getHeroQuality(id)
+        return {
+            id,
+            name: getHeroName(id),
+            country: getHeroCountry(id),
+            type: getHeroType(id),
+            iconId: getHeroIconId(id),
+            imageUrl: id ? `https://cbg-stzb.res.netease.com/game_res/cards/cut/card_medium_${getHeroIconId(id)}.jpg` : '',
+            star,
+            emptyStar: Math.max(0, quality - star),
+            skills: enrichedSkillInfo[i - 1]?.skills || [],
+        }
+    })
+    const totalBattles = Number(team.total_battles || 0)
+    const lossRate = totalBattles > 0 ? Math.round(Number(team.loss_count || 0) / totalBattles * 1000) / 10 : 0
+    const drawRate = totalBattles > 0 ? Math.round(Number(team.draw_count || 0) / totalBattles * 1000) / 10 : 0
+    return {
+        ...team,
+        heroes,
+        parsed_skill_info: enrichedSkillInfo,
+        hero_names: heroes.map(hero => `${hero.name}${hero.type ? `(${hero.type})` : ''}`).join(' / '),
+        team_names: heroes.map(hero => hero.name).join(' / '),
+        formatted_time: formatTime(team.last_time),
+        loss_rate: lossRate,
+        draw_rate: drawRate,
+    }
 }
 
 const parseSkillInfo = (str, role) => {
@@ -164,6 +278,12 @@ watch(groupByPlayer, () => {
     if (hasSearched.value) doSearch()
 })
 
+onMounted(async () => {
+    await refreshStatsStatus()
+    if (rebuilding.value) startStatsPolling()
+})
+onUnmounted(stopStatsPolling)
+
 const playerColumns: any[] = [
     {
         title: '玩家',
@@ -176,7 +296,7 @@ const playerColumns: any[] = [
         key: 'heroes',
         minWidth: 200,
         render(row) {
-            return [1, 2, 3].map(i => `${getHeroName(row[`hero${i}_id`])}(${getHeroType(row[`hero${i}_id`])})`).join(' / ')
+            return row.hero_names
         }
     },
     {
@@ -184,9 +304,8 @@ const playerColumns: any[] = [
         key: 'skills',
         width: 200,
         render(row) {
-            const groups = parseSkillInfo(row.all_skill_info, row.role)
-            const lines = groups.map(g => {
-                const names = g.skills.slice(1).filter(s => s.id && s.id !== '0').map(s => getSkillName(s.id))
+            const lines = (row.parsed_skill_info || []).map(g => {
+                const names = g.skills.slice(1).filter(s => s.id && s.id !== '0').map(s => s.name || getSkillName(s.id))
                 return names.join('/')
             }).filter(Boolean)
             return h('div', { style: { whiteSpace: 'pre-line' } }, lines.join('\n'))
@@ -264,7 +383,7 @@ const playerColumns: any[] = [
         key: 'last_time',
         width: 140,
         render(row) {
-            return formatTime(row.last_time)
+            return row.formatted_time
         }
     },
     {
@@ -281,7 +400,7 @@ const teamColumns: any[] = [
         key: 'heroes',
         minWidth: 200,
         render(row) {
-            return [1, 2, 3].map(i => getHeroName(row[`hero${i}_id`])).join(' / ')
+            return row.team_names
         }
     },
     {
@@ -295,9 +414,8 @@ const teamColumns: any[] = [
         key: 'skills',
         width: 200,
         render(row) {
-            const groups = parseSkillInfo(row.all_skill_info, row.role)
-            const lines = groups.map(g => {
-                const names = g.skills.slice(1).filter(s => s.id && s.id !== '0').map(s => getSkillName(s.id))
+            const lines = (row.parsed_skill_info || []).map(g => {
+                const names = g.skills.slice(1).filter(s => s.id && s.id !== '0').map(s => s.name || getSkillName(s.id))
                 return names.join('/')
             }).filter(Boolean)
             return h('div', { style: { whiteSpace: 'pre-line' } }, lines.join('\n'))
@@ -368,7 +486,7 @@ const teamColumns: any[] = [
         key: 'last_time',
         width: 140,
         render(row) {
-            return formatTime(row.last_time)
+            return row.formatted_time
         }
     },
 ]
@@ -401,6 +519,10 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
                 <n-button quaternary :type="useImageMode ? 'primary' : 'default'" @click="useImageMode = !useImageMode">
                     <template #icon><Image :size="16" /></template>
                     {{ useImageMode ? '图片' : '表格' }}
+                </n-button>
+                <n-button quaternary @click="rebuildStats()" :loading="rebuilding">
+                    <template #icon><RefreshCw :size="16" /></template>
+                    重建索引
                 </n-button>
             </div>
             <div class="filter-bar">
@@ -439,6 +561,10 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
                     共 <strong>{{ total }}</strong> {{ groupByPlayer ? '条记录' : '支队伍' }}
                     <span v-if="queryMs !== null">耗时 {{ queryMs }}ms</span>
                     <span v-if="cacheHit">命中缓存</span>
+                    <span v-if="source === 'materialized'">统计索引</span>
+                    <span v-else-if="source === 'raw'">原始查询</span>
+                    <span v-if="!statsReady">索引未就绪</span>
+                    <span v-if="rebuildProgressText">{{ rebuildProgressText }}</span>
                 </div>
 
                 <!-- 表格模式 -->
@@ -463,36 +589,36 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
                         <div class="team-card" v-for="team in teams" :key="playerName + team.hero1_id + team.hero2_id + team.hero3_id">
                             <div class="team-header">
                                 <span class="team-idu">{{ team.player_name }} · ID {{ team.idu }}</span>
-                                <span class="team-time">{{ formatTime(team.last_time) }}</span>
+                                <span class="team-time">{{ team.formatted_time }}</span>
                             </div>
 
                             <div class="hero-row hero-row--big">
-                                <div class="hero-big" v-for="i in 3" :key="i">
+                                <div class="hero-big" v-for="hero in team.heroes" :key="hero.id">
                                     <div class="hero-big-img">
-                                        <img v-if="team[`hero${i}_id`]"
-                                            :src="`https://cbg-stzb.res.netease.com/game_res/cards/cut/card_medium_${getHeroIconId(team[`hero${i}_id`])}.jpg`"
+                                        <img v-if="hero.id"
+                                            :src="hero.imageUrl"
                                             @error="($event.target as any).style.display='none'" />
                                         <div class="hero-placeholder" v-else>?</div>
                                         <div class="hero-big-stars">
-                                            <img v-for="s in team[`hero${i}_star`]" :key="'r'+s" class="hero-big-star-img" :src="`data:image/png;base64,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`" />
-                                            <img v-for="s in (getHeroQuality(team[`hero${i}_id`]) - team[`hero${i}_star`])" :key="'n'+s" class="hero-big-star-img" :src="`data:image/png;base64,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`" />
+                                            <span v-for="s in hero.star" :key="'r'+s" class="hero-big-star-dot hero-big-star-dot--red"></span>
+                                            <span v-for="s in hero.emptyStar" :key="'n'+s" class="hero-big-star-dot hero-big-star-dot--empty"></span>
                                             </div>
                                         </div>
                                     <div class="hero-big-info">
                                         <div class="hero-big-header">
-                                            <span class="hero-big-name">{{ getHeroName(team[`hero${i}_id`]) }}</span>
+                                            <span class="hero-big-name">{{ hero.name }}</span>
                                             <span class="hero-big-meta">
-                                                <span v-if="getHeroCountry(team[`hero${i}_id`])">{{ getHeroCountry(team[`hero${i}_id`]) }}</span>
-                                                <span v-if="getHeroType(team[`hero${i}_id`])">·{{ getHeroType(team[`hero${i}_id`]) }}</span>
-                                                <span class="hero-big-star">·{{ team[`hero${i}_star`] }}红</span>
+                                                <span v-if="hero.country">{{ hero.country }}</span>
+                                                <span v-if="hero.type">·{{ hero.type }}</span>
+                                                <span class="hero-big-star">·{{ hero.star }}红</span>
                                             </span>
                                         </div>
                                         <div class="hero-big-skills" v-if="team.all_skill_info">
-                                            <div class="hero-big-skill" v-for="(skill, si) in (parseSkillInfo(team.all_skill_info, team.role)[i - 1]?.skills || [])" :key="si">
+                                            <div class="hero-big-skill" v-for="(skill, si) in hero.skills" :key="si">
                                                 <template v-if="skill && skill.id && skill.id !== '0'">
-                                                    <n-tag v-if="getSkillQuality(skill.id)" size="tiny" :bordered="false" :type="getSkillQuality(skill.id) === 'S' ? 'warning' : getSkillQuality(skill.id) === 'A' ? 'info' : 'default'">{{ getSkillQuality(skill.id) }}</n-tag>
-                                                    <n-tag v-if="getSkillType(skill.id)" size="tiny" :bordered="false">{{ getSkillType(skill.id) }}</n-tag>
-                                                    <span class="hero-big-skill-name">{{ getSkillName(skill.id) }}</span>
+                                                    <n-tag v-if="skill.quality" size="tiny" :bordered="false" :type="skill.quality === 'S' ? 'warning' : skill.quality === 'A' ? 'info' : 'default'">{{ skill.quality }}</n-tag>
+                                                    <n-tag v-if="skill.type" size="tiny" :bordered="false">{{ skill.type }}</n-tag>
+                                                    <span class="hero-big-skill-name">{{ skill.name }}</span>
                                                 </template>
                                             </div>
                                         </div>
@@ -523,11 +649,11 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
                                 </div>
                                 <div class="stat-item">
                                     <span class="stat-label">负率</span>
-                                    <span class="stat-value" :style="{ color: lossRateColor(team.total_battles > 0 ? (team.loss_count / team.total_battles * 100) : 0), fontWeight: 700 }">{{ team.total_battles > 0 ? (team.loss_count / team.total_battles * 100).toFixed(1) : 0 }}%</span>
+                                    <span class="stat-value" :style="{ color: lossRateColor(team.loss_rate), fontWeight: 700 }">{{ team.loss_rate }}%</span>
                                 </div>
                                 <div class="stat-item">
                                     <span class="stat-label">平局率</span>
-                                    <span class="stat-value" :style="{ fontWeight: 700 }">{{ team.total_battles > 0 ? (team.draw_count / team.total_battles * 100).toFixed(1) : 0 }}%</span>
+                                    <span class="stat-value" :style="{ fontWeight: 700 }">{{ team.draw_rate }}%</span>
                                 </div>
                             </div>
                         </div>
@@ -539,31 +665,31 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
                     <div class="team-card" v-for="(team, key) in results" :key="key">
                         <div class="team-header">
                             <span class="team-idu" v-if="team.players">玩家: {{ team.players }}</span>
-                            <span class="team-time">{{ formatTime(team.last_time) }}</span>
+                            <span class="team-time">{{ team.formatted_time }}</span>
                         </div>
 
                         <div class="hero-row hero-row--big">
-                            <div class="hero-big" v-for="i in 3" :key="i">
+                            <div class="hero-big" v-for="hero in team.heroes" :key="hero.id">
                                 <div class="hero-big-img">
-                                    <img v-if="team[`hero${i}_id`]"
-                                        :src="`https://cbg-stzb.res.netease.com/game_res/cards/cut/card_medium_${getHeroIconId(team[`hero${i}_id`])}.jpg`"
+                                    <img v-if="hero.id"
+                                        :src="hero.imageUrl"
                                         @error="($event.target as any).style.display='none'" />
                                     <div class="hero-placeholder" v-else>?</div>
                                 </div>
                                 <div class="hero-big-info">
                                     <div class="hero-big-header">
-                                        <span class="hero-big-name">{{ getHeroName(team[`hero${i}_id`]) }}</span>
+                                        <span class="hero-big-name">{{ hero.name }}</span>
                                         <span class="hero-big-meta">
-                                            <span v-if="getHeroCountry(team[`hero${i}_id`])">{{ getHeroCountry(team[`hero${i}_id`]) }}</span>
-                                            <span v-if="getHeroType(team[`hero${i}_id`])">·{{ getHeroType(team[`hero${i}_id`]) }}</span>
+                                            <span v-if="hero.country">{{ hero.country }}</span>
+                                            <span v-if="hero.type">·{{ hero.type }}</span>
                                         </span>
                                     </div>
                                     <div class="hero-big-skills" v-if="team.all_skill_info">
-                                        <div class="hero-big-skill" v-for="(skill, si) in (parseSkillInfo(team.all_skill_info, team.role)[i - 1]?.skills || [])" :key="si">
+                                        <div class="hero-big-skill" v-for="(skill, si) in hero.skills" :key="si">
                                             <template v-if="skill && skill.id && skill.id !== '0'">
-                                                <n-tag v-if="getSkillQuality(skill.id)" size="tiny" :bordered="false" :type="getSkillQuality(skill.id) === 'S' ? 'warning' : getSkillQuality(skill.id) === 'A' ? 'info' : 'default'">{{ getSkillQuality(skill.id) }}</n-tag>
-                                                <n-tag v-if="getSkillType(skill.id)" size="tiny" :bordered="false">{{ getSkillType(skill.id) }}</n-tag>
-                                                <span class="hero-big-skill-name">{{ getSkillName(skill.id) }}</span>
+                                                <n-tag v-if="skill.quality" size="tiny" :bordered="false" :type="skill.quality === 'S' ? 'warning' : skill.quality === 'A' ? 'info' : 'default'">{{ skill.quality }}</n-tag>
+                                                <n-tag v-if="skill.type" size="tiny" :bordered="false">{{ skill.type }}</n-tag>
+                                                <span class="hero-big-skill-name">{{ skill.name }}</span>
                                             </template>
                                         </div>
                                     </div>
@@ -594,11 +720,11 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
                             </div>
                             <div class="stat-item">
                                 <span class="stat-label">负率</span>
-                                <span class="stat-value" :style="{ color: lossRateColor(team.total_battles > 0 ? (team.loss_count / team.total_battles * 100) : 0), fontWeight: 700 }">{{ team.total_battles > 0 ? (team.loss_count / team.total_battles * 100).toFixed(1) : 0 }}%</span>
+                                <span class="stat-value" :style="{ color: lossRateColor(team.loss_rate), fontWeight: 700 }">{{ team.loss_rate }}%</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-label">平局率</span>
-                                <span class="stat-value" :style="{ fontWeight: 700 }">{{ team.total_battles > 0 ? (team.draw_count / team.total_battles * 100).toFixed(1) : 0 }}%</span>
+                                <span class="stat-value" :style="{ fontWeight: 700 }">{{ team.draw_rate }}%</span>
                             </div>
                         </div>
                     </div>
@@ -786,9 +912,20 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
         padding: 3px 4px;
     }
 
-    &-star-img {
-        width: 18px !important;
-        height: 18px !important;
+    &-star-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+
+        &--red {
+            background: #ef4444;
+        }
+
+        &--empty {
+            background: rgba(255, 255, 255, 0.7);
+        }
     }
 
     &-info {

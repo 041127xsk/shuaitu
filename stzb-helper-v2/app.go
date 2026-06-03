@@ -1029,6 +1029,41 @@ func (a *App) AutoConnectDb() string {
 	return a.SelectDb("")
 }
 
+// GetMaterializedStatsStatus 获取派生统计状态
+func (a *App) GetMaterializedStatsStatus() string {
+	states, err := getMaterializedStates()
+	if err != nil {
+		return global.Response{Message: "获取统计索引状态失败: " + err.Error()}.Error()
+	}
+	return global.Response{Data: map[string]interface{}{
+		"states":            states,
+		"team_ready":        materializedStateReady("player_team_snapshot"),
+		"winrate_ready":     materializedStateReady("team_winrate_stats"),
+		"rebuilding":        materializedStatsRebuildRunning(),
+		"version":           materializedStatsVersion,
+		"default_min_level": defaultWinRateMinLevel,
+		"default_min_hp":    defaultWinRateMinHp,
+	}}.Success()
+}
+
+// RebuildMaterializedStats 从原始战报重建派生统计
+func (a *App) RebuildMaterializedStats() string {
+	started, err := startMaterializedStatsRebuild()
+	if err != nil {
+		return global.Response{Message: "启动统计索引重建失败: " + err.Error()}.Error()
+	}
+	if !started {
+		return global.Response{Data: map[string]interface{}{
+			"started": false,
+		}, Message: "统计索引正在重建中"}.Success()
+	}
+	invalidatePlayerTeamQueryCache()
+	invalidateQueryCache(&teamWinRateQueryCache)
+	return global.Response{Data: map[string]interface{}{
+		"started": true,
+	}, Message: "统计索引已开始后台重建"}.Success()
+}
+
 // GetLogs 获取历史日志
 func (a *App) GetLogs() string {
 	return global.Response{Data: global.LogW.GetLogs()}.Success()
@@ -1093,6 +1128,23 @@ func (a *App) GetPlayerTeam(name string, uname string, idu string, page int, pag
 	}
 	pageSize = normalizePlayerTeamPageSize(pageSize)
 
+	if materializedStateReady("player_team_snapshot") {
+		results, total, meta, err := queryMaterializedPlayerTeams(name, uname, idu, page, pageSize)
+		if err != nil {
+			return global.Response{Message: "查询统计索引失败: " + err.Error()}.Error()
+		}
+		log.Printf("查询玩家队伍(派生表): name=%s, union=%s, idu=%s, page=%d, total=%d, 结果=%d条, 耗时=%dms", name, uname, idu, page, total, len(results), meta.QueryMS)
+		return global.Response{Data: map[string]interface{}{
+			"list":      results,
+			"total":     total,
+			"page":      page,
+			"pageSize":  pageSize,
+			"query_ms":  meta.QueryMS,
+			"cache_hit": false,
+			"source":    "materialized",
+		}}.Success()
+	}
+
 	teams, meta, err := queryEffectivePlayerTeamsWithMeta(name, uname, idu)
 	if err != nil {
 		return global.Response{Message: "查询失败: " + err.Error()}.Error()
@@ -1107,10 +1159,25 @@ func (a *App) GetPlayerTeam(name string, uname string, idu string, page int, pag
 		"pageSize":  pageSize,
 		"query_ms":  meta.QueryMS,
 		"cache_hit": meta.CacheHit,
+		"source":    "raw",
 	}}.Success()
 }
 
 func (a *App) GetPlayerTeamExport(name string, uname string, idu string) string {
+	if materializedStateReady("player_team_snapshot") {
+		teams, meta, err := queryMaterializedPlayerTeamsAll(name, uname, idu)
+		if err != nil {
+			return global.Response{Message: "导出统计索引失败: " + err.Error()}.Error()
+		}
+		return global.Response{Data: map[string]interface{}{
+			"list":      teams,
+			"total":     len(teams),
+			"query_ms":  meta.QueryMS,
+			"cache_hit": false,
+			"source":    "materialized",
+		}}.Success()
+	}
+
 	teams, meta, err := queryEffectivePlayerTeamsWithMeta(name, uname, idu)
 	if err != nil {
 		return global.Response{Message: "导出查询失败: " + err.Error()}.Error()
@@ -1122,7 +1189,61 @@ func (a *App) GetPlayerTeamExport(name string, uname string, idu string) string 
 		"total":     len(teams),
 		"query_ms":  meta.QueryMS,
 		"cache_hit": meta.CacheHit,
+		"source":    "raw",
 	}}.Success()
+}
+
+// GetPlayerTeamRelatedBattles 按需查询某支队伍相关原始战报
+func (a *App) GetPlayerTeamRelatedBattles(playerName string, role string, idu string, hero1ID int, hero2ID int, hero3ID int, page int, pageSize int) string {
+	rows, total, err := queryRelatedBattles(playerName, role, idu, hero1ID, hero2ID, hero3ID, page, pageSize)
+	if err != nil {
+		return global.Response{Message: "查询相关战报失败: " + err.Error()}.Error()
+	}
+	return global.Response{Data: map[string]interface{}{
+		"list":     rows,
+		"total":    total,
+		"page":     page,
+		"pageSize": pageSize,
+	}}.Success()
+}
+
+// HidePlayerTeam 隐藏一支队伍，并同步排除队伍查询和胜率查询
+func (a *App) HidePlayerTeam(playerName string, role string, idu string, hero1ID int, hero2ID int, hero3ID int, allSkillInfo string) string {
+	err := hideMaterializedPlayerTeam(playerTeam{
+		PlayerName:   playerName,
+		Role:         role,
+		Idu:          idu,
+		Hero1ID:      hero1ID,
+		Hero2ID:      hero2ID,
+		Hero3ID:      hero3ID,
+		AllSkillInfo: allSkillInfo,
+	})
+	if err != nil {
+		return global.Response{Message: "隐藏队伍失败: " + err.Error()}.Error()
+	}
+	return global.Response{Message: "已隐藏该队伍，队伍查询和胜率查询会同步排除"}.Success()
+}
+
+// GetHiddenPlayerTeams 查询已隐藏队伍
+func (a *App) GetHiddenPlayerTeams(page int, pageSize int) string {
+	rows, total, err := queryHiddenMaterializedTeams(page, pageSize)
+	if err != nil {
+		return global.Response{Message: "查询隐藏队伍失败: " + err.Error()}.Error()
+	}
+	return global.Response{Data: map[string]interface{}{
+		"list":     rows,
+		"total":    total,
+		"page":     page,
+		"pageSize": pageSize,
+	}}.Success()
+}
+
+// RestoreHiddenPlayerTeam 恢复一支已隐藏队伍
+func (a *App) RestoreHiddenPlayerTeam(id int) string {
+	if err := restoreHiddenMaterializedTeam(int64(id)); err != nil {
+		return global.Response{Message: "恢复隐藏队伍失败: " + err.Error()}.Error()
+	}
+	return global.Response{Message: "已恢复该队伍，原始战报未被删除"}.Success()
 }
 
 // GetTeamWinRate 查询队伍胜率统计
@@ -1156,6 +1277,14 @@ func (a *App) GetTeamWinRate(name string, uname string, idu string, page int, pa
 	}
 	if pageSize < 1 || pageSize > 200 {
 		pageSize = 50
+	}
+
+	if data, used, err := queryMaterializedWinRateStats("player", name, uname, idu, page, pageSize, minLevel, minHp); used {
+		if err != nil {
+			return global.Response{Message: "查询统计索引失败: " + err.Error()}.Error()
+		}
+		log.Printf("查询队伍胜率(派生表): name=%s, union=%s, idu=%s, page=%d, total=%v, 耗时=%vms", name, uname, idu, page, data["total"], data["query_ms"])
+		return global.Response{Data: data}.Success()
 	}
 
 	cacheKey := makeQueryCacheKey("player", name, uname, idu, page, pageSize, minLevel, minHp)
@@ -1202,6 +1331,13 @@ func (a *App) GetTeamWinRate(name string, uname string, idu string, page int, pa
 			AND LENGTH(REPLACE(all_skill_info, ',0,', ',')) = LENGTH(all_skill_info)
 			AND attack_name LIKE ? AND attack_union_name LIKE ? AND attack_idu LIKE ?
 			AND npc = 0 AND result IN (0,1,2,3,4,6,7,8,10,13,18,19)
+			AND NOT EXISTS (
+				SELECT 1 FROM materialized_team_exclusion e
+				WHERE e.lineup_key = printf('%d_%d_%d', attack_hero1_id, attack_hero2_id, attack_hero3_id)
+					AND (e.player_name = '' OR e.player_name = attack_name)
+					AND (e.role = '' OR e.role = 'attack')
+					AND (e.idu = '' OR e.idu = attack_idu)
+			)
 		UNION ALL
 		SELECT
 			defend_name AS player_name,
@@ -1232,6 +1368,13 @@ func (a *App) GetTeamWinRate(name string, uname string, idu string, page int, pa
 			AND LENGTH(REPLACE(all_skill_info, ',0,', ',')) = LENGTH(all_skill_info)
 			AND defend_name LIKE ? AND defend_union_name LIKE ? AND defend_idu LIKE ?
 			AND npc = 0 AND result IN (0,1,2,3,4,6,7,8,10,13,18,19)
+			AND NOT EXISTS (
+				SELECT 1 FROM materialized_team_exclusion e
+				WHERE e.lineup_key = printf('%d_%d_%d', defend_hero1_id, defend_hero2_id, defend_hero3_id)
+					AND (e.player_name = '' OR e.player_name = defend_name)
+					AND (e.role = '' OR e.role = 'defend')
+					AND (e.idu = '' OR e.idu = defend_idu)
+			)
 	),
 	aggregated AS (
 		SELECT
@@ -1290,6 +1433,7 @@ func (a *App) GetTeamWinRate(name string, uname string, idu string, page int, pa
 		"pageSize":  pageSize,
 		"query_ms":  time.Since(queryStart).Milliseconds(),
 		"cache_hit": false,
+		"source":    "raw",
 	}
 	setCachedQueryData(&teamWinRateQueryCache, cacheKey, data)
 	log.Printf("查询队伍胜率: name=%s, union=%s, idu=%s, page=%d, total=%d, 结果: %d条, 耗时=%dms", name, uname, idu, page, total, len(results), data["query_ms"])
@@ -1325,6 +1469,14 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 	}
 	if pageSize < 1 || pageSize > 200 {
 		pageSize = 50
+	}
+
+	if data, used, err := queryMaterializedWinRateStats("team", name, uname, idu, page, pageSize, minLevel, minHp); used {
+		if err != nil {
+			return global.Response{Message: "查询统计索引失败: " + err.Error()}.Error()
+		}
+		log.Printf("查询队伍胜率(按队伍/派生表): name=%s, union=%s, idu=%s, page=%d, total=%v, 耗时=%vms", name, uname, idu, page, data["total"], data["query_ms"])
+		return global.Response{Data: data}.Success()
 	}
 
 	cacheKey := makeQueryCacheKey("team", name, uname, idu, page, pageSize, minLevel, minHp)
@@ -1368,6 +1520,13 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 			AND LENGTH(REPLACE(all_skill_info, ',0,', ',')) = LENGTH(all_skill_info)
 			AND attack_name LIKE ? AND attack_union_name LIKE ? AND attack_idu LIKE ?
 			AND npc = 0 AND result IN (0,1,2,3,4,6,7,8,10,13,18,19)
+			AND NOT EXISTS (
+				SELECT 1 FROM materialized_team_exclusion e
+				WHERE e.lineup_key = printf('%d_%d_%d', attack_hero1_id, attack_hero2_id, attack_hero3_id)
+					AND (e.player_name = '' OR e.player_name = attack_name)
+					AND (e.role = '' OR e.role = 'attack')
+					AND (e.idu = '' OR e.idu = attack_idu)
+			)
 		UNION ALL
 		SELECT
 			defend_name AS player_name,
@@ -1397,6 +1556,13 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 			AND LENGTH(REPLACE(all_skill_info, ',0,', ',')) = LENGTH(all_skill_info)
 			AND defend_name LIKE ? AND defend_union_name LIKE ? AND defend_idu LIKE ?
 			AND npc = 0 AND result IN (0,1,2,3,4,6,7,8,10,13,18,19)
+			AND NOT EXISTS (
+				SELECT 1 FROM materialized_team_exclusion e
+				WHERE e.lineup_key = printf('%d_%d_%d', defend_hero1_id, defend_hero2_id, defend_hero3_id)
+					AND (e.player_name = '' OR e.player_name = defend_name)
+					AND (e.role = '' OR e.role = 'defend')
+					AND (e.idu = '' OR e.idu = defend_idu)
+			)
 	),
 	aggregated AS (
 		SELECT
@@ -1548,6 +1714,7 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 		"pageSize":  pageSize,
 		"query_ms":  time.Since(queryStart).Milliseconds(),
 		"cache_hit": false,
+		"source":    "raw",
 	}
 	setCachedQueryData(&teamWinRateQueryCache, cacheKey, data)
 	log.Printf("查询队伍胜率(按队伍): name=%s, union=%s, idu=%s, page=%d, total=%d, 结果: %d条, 耗时=%dms", name, uname, idu, page, total, len(pageResults), data["query_ms"])

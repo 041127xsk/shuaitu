@@ -234,6 +234,65 @@
   - 队伍查询将支持“先出结果，展开后按需加载相关原始战报”，避免主查询被原始大表拖慢。
   - 设计文档已写入 `stzb-helper-v2/docs/superpowers/specs/2026-06-02-performance-materialized-stats-design.md`。
 
+## 最近一次会话进展（2026-06-02 最晚）
+- **stzb-helper-v2 百万级战报物化统计已实现首版**：
+  - 新增 `player_team_snapshot`、`team_winrate_stats`、`materialized_state` 三张派生表，随 `model.InitDB` 自动迁移。
+  - 新增 `RebuildMaterializedStats()` 和 `GetMaterializedStatsStatus()` Wails API；队伍查询页和胜率页提供“重建索引”入口。
+  - `GetPlayerTeam` / `GetPlayerTeamExport` 在 `player_team_snapshot` ready 时优先读取派生快照，否则回退原始查询。
+  - `GetTeamWinRate` / `GetTeamWinRateByTeam` 在默认阈值（30 级、20000 兵力）且 `team_winrate_stats` ready 时优先读取派生统计；其他阈值暂时回退原始查询，避免统计口径错误。
+  - 新增 `GetPlayerTeamRelatedBattles()`，队伍查询先展示结果，点击“战报”后再从原始 `battle_report` 按需加载该队伍相关战报。
+  - 抓包新增战报入库后会调用 `applyBattleReportToMaterializedStats()` 增量刷新受影响玩家快照和胜率统计；失败时保留原始战报并标记/记录索引异常。
+  - 新增 `materialized_stats_test.go` 覆盖队伍快照、胜率规则、全量重建和攻守胜负标签。
+
+## 最近一次会话进展（2026-06-02 最最后）
+- **stzb-helper-v2 统计索引后台重建与进度展示**：
+  - `RebuildMaterializedStats()` 从同步阻塞改为启动后台重建任务，立即返回“已开始后台重建”。
+  - `materialized_state` 新增 `processed_report_count`，配合 `battle_report_count` 展示重建进度。
+  - `GetMaterializedStatsStatus()` 返回 `rebuilding` 状态；队伍查询页和胜率页每秒轮询状态，显示 `重建中 已处理/总数 (%)`。
+  - 重建完成后页面自动刷新当前查询；重建期间查询仍可回退原始表或等待索引 ready。
+  - 新增测试覆盖后台重建启动、进度写入和完成状态。
+
+## 最近一次会话进展（2026-06-02 隐藏同步）
+- **stzb-helper-v2 队伍隐藏同步到胜率查询**：
+  - 新增 `materialized_team_exclusion` 表，保存用户在队伍查询中隐藏的队伍标记。
+  - `player_team_snapshot` 查询和 `team_winrate_stats` 查询都会按同一隐藏标记过滤，避免队伍查询隐藏后胜率页仍显示。
+  - 队伍查询页新增“隐藏”按钮，确认后写入排除标记并清空队伍/胜率短时缓存。
+  - 隐藏不会删除原始 `battle_report`，不改变抓取频率、失败重试、断点续跑或战报去重规则；后续重建索引会继续保留隐藏标记。
+  - 新增测试覆盖隐藏队伍后队伍查询、玩家胜率查询、按队伍胜率查询同步排除。
+
+## 最近一次会话进展（2026-06-03 页面体验优化）
+- **stzb-helper-v2 隐藏恢复与查询页渲染优化**：
+  - 新增 `GetHiddenPlayerTeams(page, pageSize)` 和 `RestoreHiddenPlayerTeam(id)` Wails API，用于查看和恢复隐藏队伍。
+  - 队伍查询页新增“隐藏管理”弹窗，可分页查看隐藏队伍并恢复；恢复只删除隐藏标记，不删除原始 `battle_report`。
+  - 队伍查询页将玩家分组改为 `computed`，当前页战法解析缓存到结果对象，相关战报已加载后折叠/展开不再重复请求。
+  - 队伍胜率页把英雄、战法、时间、负率和平局率预处理成展示模型，模板不再反复解析配置和战法字符串。
+  - 队伍胜率页移除重复内联 base64 星星图片，改为 CSS 星点，页面 chunk 明显减小。
+  - 新增测试覆盖隐藏列表、恢复隐藏后队伍/胜率重新显示，以及恢复不存在记录的错误路径。
+
+## 最近一次会话进展（2026-06-03 大库稳定性）
+- **stzb-helper-v2 统计索引重建内存与替换窗口优化**：
+  - 全量重建不再把所有 `battle_report` 原始行累积成一个大数组，而是按批读取后直接送入汇总器，边读边累计队伍快照候选和胜率统计。
+  - 重建结果先写入 `player_team_snapshot_rebuild` / `team_winrate_stats_rebuild` 临时表，写完后用短事务替换正式表，降低百万级重建期间正式统计表被长时间占用的风险。
+  - `model.InitDB` 设置 `busy_timeout`、WAL、`synchronous=NORMAL` 和 `temp_store=MEMORY`，提升 SQLite 长读写共存稳定性。
+  - 新增相关战报展开索引和队伍胜率派生查询索引：`idx_br_attack_related`、`idx_br_defend_related`、`idx_twrs_team_search`。
+  - 新增测试覆盖分批汇总与旧规则一致、临时表替换后清理、以及大库查询索引自动创建。
+  - 本轮不改变抓取频率、失败重试、断点续跑、战报去重规则；`battle_report` 仍是唯一权威数据源。
+
+## 最近一次会话进展（2026-06-03 发布与实测基线）
+- **stzb-helper-v2 最新桌面包与统计索引性能基线**：
+  - 已执行 `wails build -clean`，新桌面包输出到 `stzb-helper-v2/build/bin/stzbHelper-wails.exe`。
+  - `build/bin` 已清理为只保留最新 `stzbHelper-wails.exe`；历史本地 exe 不再留在该目录。
+  - 新增默认跳过的 `TestMaterializedStatsPerformanceProbe`；设置 `STZB_PERF_DB` 后可在复制库上复测统计索引重建和查询耗时。
+  - 使用 `E:\openclaw\openclaw-main\战报助手\数据库\歌丨池上#7191611_X5602.db` 的临时副本实测：`battle_report_count=74326`，重建 `3.732s`，队伍查询 `16ms`，默认阈值胜率查询 `35ms`，相关战报展开 `1ms`。
+  - 该实测库不是百万级，仅作为当前优化后的本机基线；真实一赛季百万级库仍需单独复测。
+
+## 最近一次会话进展（2026-06-02 侧边栏整理）
+- **stzb-helper-v2 移除空白自动翻页入口**：
+  - 左侧控制栏移除“自动翻页”菜单项，避免点击进入不存在路由后的空白页面。
+  - `frontend/src/App.vue` 同步移除该菜单项独占使用的刷新图标导入。
+  - 保留后台自动翻页能力和首页已有控制入口，不改变 ADB 配置、抓包逻辑、重复战报处理或数据结构。
+  - 新增 `frontend_navigation_test.go`，防止侧边栏再次暴露空白自动翻页入口。
+
 ## 最近一次会话进展（2026-04-26）
 - 确认了 AI 抽取使用通义千问 dashscope API（`qwen/qwen3.5-flash`）。
 - AI 抽取验证结果：群吕布（4 effects，skill_type 为空）、张机（2 effects，完整数据）、赵云（3 effects，skill_type 为空）。

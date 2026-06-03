@@ -345,3 +345,42 @@ python scripts\import_stzb_helper.py --dry-run
 ### 数据存储
 - stzbHelper 数据库：项目根目录下 `*.db` 文件
 - 本项目数据库：`data/heroes.db` 中的 `stzb_battle_reports` 和 `stzb_team_members` 表
+
+### 统计索引（stzb-helper-v2）
+stzb-helper-v2 会在数据库中维护统计索引相关表：
+- `player_team_snapshot`：队伍查询快照。
+- `team_winrate_stats`：默认阈值（30 级、20000 兵力）下的胜率预计算统计。
+- `materialized_state`：统计索引状态。
+- `materialized_team_exclusion`：队伍查询中隐藏的队伍标记。
+
+使用方式：
+1. 选择数据库后，进入「队伍查询」或「队伍胜率」。
+2. 首次使用或导入大量历史战报后，点击「重建索引」。重建会在后台运行，页面会显示 `重建中 已处理/总数 (%)`。
+3. 后续抓包新增战报成功入库后，会自动增量更新统计索引。
+4. 队伍查询会先展示快照结果；点击某支队伍的「战报」按钮后，再从原始 `battle_report` 加载相关战报。
+5. 在队伍查询中点击「隐藏」后，该队伍会写入 `materialized_team_exclusion`，队伍查询和默认阈值胜率查询都会同步排除。
+6. 在队伍查询中点击「隐藏管理」可以查看隐藏队伍并恢复；恢复只删除隐藏标记，不删除原始战报。
+
+注意：
+- `battle_report` 仍是唯一权威数据源；派生表只是可重建的加速层。
+- 全量重建会按批读取原始战报并先写 `_rebuild` 临时表，最后再替换正式统计表；正常完成或失败后临时表会被清理。
+- `stzb-helper-v2` 初始化数据库时会启用 SQLite WAL、busy timeout 等参数，并创建相关战报展开和派生胜率查询索引。
+- 隐藏队伍不会删除原始 `battle_report`，重建索引后隐藏标记仍会生效。
+- 恢复隐藏队伍后，页面会刷新当前查询；胜率页下一次查询也会同步显示恢复后的队伍。
+- 如果页面显示「索引未就绪」，可以点击「重建索引」。
+- 胜率页在默认阈值下优先使用统计索引；修改最低等级或最低兵力后会回退原始查询。
+
+性能复测：
+```powershell
+# 建议先复制数据库，再对副本运行，避免实测过程改动原始库的派生表和索引
+Set-Location E:\openclaw\openclaw-main\stzb-helper-v2
+$env:STZB_PERF_DB="E:\path\to\copied-season.db"
+go test . -run TestMaterializedStatsPerformanceProbe -v -count=1
+Remove-Item Env:STZB_PERF_DB
+```
+
+当前本机基线（2026-06-03，74,326 条 `battle_report`，非百万级）：
+- 统计索引重建：约 3.73 秒。
+- 队伍查询：约 16 ms。
+- 默认阈值胜率查询：约 35 ms。
+- 相关战报展开：约 1 ms。
