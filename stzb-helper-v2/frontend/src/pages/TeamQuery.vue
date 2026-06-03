@@ -440,6 +440,37 @@ const qualityColor = (q) => {
     return '#9ca3af'
 }
 
+const hasBuiltInHeroName = (id) => !!mappedHeroMap.value[String(resolveHeroId(id))]
+const hasBuiltInSkillName = (id) => !!mappedSkillMap.value[String(id)]
+const hasBuiltInGearName = (id) => !!gearMap[Number(id)]
+const hasMappedName = (kind, id) => !!getMappedName(mappingIndex.value, kind, id)
+
+const unknownNameItems = computed(() => {
+    const seen = new Set<string>()
+    const items: any[] = []
+    const add = (kind: string, id: number | string) => {
+        const num = Number(id)
+        if (!num) return
+        const key = `${kind}-${num}`
+        if (seen.has(key) || hasMappedName(kind, num)) return
+        if (kind === 'hero' && hasBuiltInHeroName(num)) return
+        if (kind === 'skill' && hasBuiltInSkillName(num)) return
+        if (kind === 'gear' && hasBuiltInGearName(num)) return
+        seen.add(key)
+        items.push({ kind, id: num })
+    }
+    results.value.forEach(team => {
+        add('hero', team.hero1_id)
+        add('hero', team.hero2_id)
+        add('hero', team.hero3_id)
+        parseSkillInfo(team.all_skill_info, team.role).forEach(group => {
+            (group.skills || []).forEach((skill: any) => add('skill', skill.id))
+        })
+        parseGearInfo(team.gear).filter(Boolean).forEach((g: any) => add('gear', g.id))
+    })
+    return items
+})
+
 const parseGearInfo = (gearStr) => {
     if (!gearStr) return []
     const slots = gearStr.split(';').filter(s => s.trim() !== '')
@@ -488,6 +519,15 @@ const mappingKindOptions = [
     { label: '战法', value: 'skill' },
     { label: '宝物', value: 'gear' },
 ]
+const mappingKindLabel = (kind) => mappingKindOptions.find(o => o.value === kind)?.label || kind
+
+const fillMappingForm = (item: any) => {
+    mappingForm.value = {
+        kind: item.kind || 'hero',
+        id: Number(item.id || 0),
+        name: item.name || '',
+    }
+}
 const filteredNameMappings = computed(() =>
     nameMappings.value.filter(row => row.kind === mappingForm.value.kind)
 )
@@ -783,23 +823,43 @@ onUnmounted(stopStatsPolling)
                     </n-form-item>
                 </n-form>
             </div>
-            <n-divider />
+
+            <n-divider>当前结果中的未知 ID</n-divider>
+            <div v-if="unknownNameItems.length === 0" class="mapping-empty">当前查询结果里没有未知 ID</div>
+            <div v-else class="unknown-id-list">
+                <n-button
+                    v-for="item in unknownNameItems"
+                    :key="`${item.kind}-${item.id}`"
+                    size="small"
+                    secondary
+                    @click="fillMappingForm(item)"
+                >
+                    {{ mappingKindLabel(item.kind) }} {{ item.id }}
+                </n-button>
+            </div>
+
+            <n-divider>已保存映射</n-divider>
             <div v-if="mappingLoading" class="mapping-loading">
                 <n-spin size="small" />
-                <span>加载中...</span>
+                <span>读取中...</span>
             </div>
             <n-empty v-else-if="filteredNameMappings.length === 0" description="当前类型暂无映射" />
             <div v-else class="mapping-list">
                 <div class="mapping-row" v-for="row in filteredNameMappings" :key="`${row.kind}-${row.id}`">
-                    <span class="mapping-kind">{{ row.kind }}</span>
-                    <span class="mapping-id">ID:{{ row.id }}</span>
-                    <span class="mapping-name">{{ row.name }}</span>
-                    <n-popconfirm @positive-click="deleteNameMapping(row)">
-                        <template #trigger>
-                            <n-button size="tiny" quaternary type="error">删除</n-button>
-                        </template>
-                        确认删除该映射？
-                    </n-popconfirm>
+                    <div class="mapping-row-info">
+                        <n-tag size="small" :bordered="false">{{ mappingKindLabel(row.kind) }}</n-tag>
+                        <span class="mapping-id">ID {{ row.id }}</span>
+                        <strong class="mapping-name">{{ row.name }}</strong>
+                    </div>
+                    <div class="mapping-row-actions">
+                        <n-button size="tiny" quaternary @click="fillMappingForm(row)">编辑</n-button>
+                        <n-popconfirm @positive-click="deleteNameMapping(row)">
+                            <template #trigger>
+                                <n-button size="tiny" quaternary type="error">删除</n-button>
+                            </template>
+                            确认删除该映射？
+                        </n-popconfirm>
+                    </div>
                 </div>
             </div>
         </n-modal>
@@ -1066,6 +1126,7 @@ onUnmounted(stopStatsPolling)
 .mapping-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
     padding: 8px 12px;
     background: #fafafa;
@@ -1073,20 +1134,41 @@ onUnmounted(stopStatsPolling)
     font-size: 13px;
 }
 
-.mapping-kind {
-    color: #666;
-    min-width: 36px;
+.mapping-row-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.mapping-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .mapping-id {
     color: #999;
-    min-width: 80px;
+    min-width: 60px;
 }
 
 .mapping-name {
-    flex: 1;
-    font-weight: 500;
     color: #333;
+}
+
+.mapping-empty {
+    text-align: center;
+    color: #999;
+    padding: 16px 0;
+    font-size: 13px;
+}
+
+.unknown-id-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 120px;
+    overflow-y: auto;
 }
 
 .hidden-modal {
