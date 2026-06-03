@@ -40,6 +40,8 @@ func (a *App) startup(ctx context.Context) {
 	log.SetOutput(appLogOutput(os.Stdout))
 	log.Println("日志系统已连接到前端")
 	startWriteQueue()
+	initQueryCache(&teamWinRateQueryCache)
+	initPlayerTeamQueryCache()
 }
 
 func appLogOutput(stdout io.Writer) io.Writer {

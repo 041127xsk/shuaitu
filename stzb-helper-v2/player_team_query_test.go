@@ -78,6 +78,7 @@ func TestPaginatePlayerTeamsCanReturnAllForExport(t *testing.T) {
 }
 
 func TestPlayerTeamCacheReportsHit(t *testing.T) {
+	initPlayerTeamQueryCache()
 	invalidatePlayerTeamQueryCache()
 	key := playerTeamQueryCacheKey("甲", "盟", "1")
 	setCachedPlayerTeams(key, []playerTeam{{BattleID: 100}})

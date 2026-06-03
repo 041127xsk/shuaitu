@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/list"
 	"fmt"
 	"log"
 	"sort"
@@ -44,12 +45,21 @@ type playerTeamQueryMeta struct {
 	CacheHit bool  `json:"cache_hit"`
 }
 
-var playerTeamQueryCache = struct {
+type playerTeamLRUCache struct {
 	sync.Mutex
-	entry playerTeamCacheEntry
-}{}
+	entries map[string]*list.Element
+	order   *list.List
+}
+
+var playerTeamQueryCache playerTeamLRUCache
 
 const playerTeamQueryCacheTTL = 20 * time.Second
+const playerTeamQueryCacheMaxSize = 32
+
+func initPlayerTeamQueryCache() {
+	playerTeamQueryCache.entries = make(map[string]*list.Element, playerTeamQueryCacheMaxSize)
+	playerTeamQueryCache.order = list.New()
+}
 
 func queryEffectivePlayerTeams(name, uname, idu string) ([]playerTeam, error) {
 	teams, _, err := queryEffectivePlayerTeamsWithMeta(name, uname, idu)
@@ -285,10 +295,23 @@ func getCachedPlayerTeams(key string) ([]playerTeam, bool) {
 	playerTeamQueryCache.Lock()
 	defer playerTeamQueryCache.Unlock()
 
-	entry := playerTeamQueryCache.entry
-	if entry.key != key || len(entry.teams) == 0 || time.Since(entry.createdAt) > playerTeamQueryCacheTTL {
+	if playerTeamQueryCache.entries == nil {
 		return nil, false
 	}
+
+	elem, ok := playerTeamQueryCache.entries[key]
+	if !ok {
+		return nil, false
+	}
+
+	entry := elem.Value.(*playerTeamCacheEntry)
+	if len(entry.teams) == 0 || time.Since(entry.createdAt) > playerTeamQueryCacheTTL {
+		playerTeamQueryCache.order.Remove(elem)
+		delete(playerTeamQueryCache.entries, key)
+		return nil, false
+	}
+
+	playerTeamQueryCache.order.MoveToFront(elem)
 	return append([]playerTeam(nil), entry.teams...), true
 }
 
@@ -296,15 +319,42 @@ func setCachedPlayerTeams(key string, teams []playerTeam) {
 	playerTeamQueryCache.Lock()
 	defer playerTeamQueryCache.Unlock()
 
-	playerTeamQueryCache.entry = playerTeamCacheEntry{
+	if playerTeamQueryCache.entries == nil {
+		playerTeamQueryCache.entries = make(map[string]*list.Element, playerTeamQueryCacheMaxSize)
+		playerTeamQueryCache.order = list.New()
+	}
+
+	if elem, ok := playerTeamQueryCache.entries[key]; ok {
+		playerTeamQueryCache.order.Remove(elem)
+		delete(playerTeamQueryCache.entries, key)
+	}
+
+	if playerTeamQueryCache.order.Len() >= playerTeamQueryCacheMaxSize {
+		oldest := playerTeamQueryCache.order.Back()
+		if oldest != nil {
+			oldEntry := oldest.Value.(*playerTeamCacheEntry)
+			delete(playerTeamQueryCache.entries, oldEntry.key)
+			playerTeamQueryCache.order.Remove(oldest)
+		}
+	}
+
+	entry := &playerTeamCacheEntry{
 		key:       key,
 		createdAt: time.Now(),
 		teams:     append([]playerTeam(nil), teams...),
 	}
+	elem := playerTeamQueryCache.order.PushFront(entry)
+	playerTeamQueryCache.entries[key] = elem
 }
 
 func invalidatePlayerTeamQueryCache() {
 	playerTeamQueryCache.Lock()
 	defer playerTeamQueryCache.Unlock()
-	playerTeamQueryCache.entry = playerTeamCacheEntry{}
+
+	playerTeamQueryCache.entries = make(map[string]*list.Element, playerTeamQueryCacheMaxSize)
+	if playerTeamQueryCache.order != nil {
+		playerTeamQueryCache.order.Init()
+	} else {
+		playerTeamQueryCache.order = list.New()
+	}
 }
