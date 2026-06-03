@@ -3,6 +3,7 @@ package model
 import (
 	"log"
 	"strings"
+	"time"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -18,7 +19,7 @@ func InitDB(databasePath string) {
 	if !strings.HasSuffix(dsn, ".db") {
 		dsn = dsn + ".db"
 	}
-	dsn = dsn + "?cache=shared&mode=rwc"
+	dsn = dsn + "?cache=shared&mode=rwc&_journal_mode=WAL&_busy_timeout=5000&_synchronous=NORMAL&_temp_store=MEMORY"
 	// SQLite 需要正斜杠
 	dsn = strings.ReplaceAll(dsn, "\\", "/")
 	log.Println("正在连接数据库:", dsn)
@@ -28,16 +29,16 @@ func InitDB(databasePath string) {
 		log.Println("连接数据库失败:", err)
 		return
 	}
-	for _, sql := range []string{
-		"PRAGMA busy_timeout = 5000",
-		"PRAGMA journal_mode = WAL",
-		"PRAGMA synchronous = NORMAL",
-		"PRAGMA temp_store = MEMORY",
-	} {
-		if err := db.Exec(sql).Error; err != nil {
-			log.Println("设置 SQLite 参数失败:", err)
-		}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Println("获取底层连接失败:", err)
+		return
 	}
+	sqlDB.SetMaxOpenConns(1)
+	sqlDB.SetMaxIdleConns(1)
+	sqlDB.SetConnMaxLifetime(0)
+	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
 
 	err = db.AutoMigrate(&TeamUser{}, &Task{}, &Report{}, &BattleReport{}, &PlayerTeamSnapshot{}, &TeamWinRateStat{}, &MaterializedState{}, &MaterializedTeamExclusion{})
 	if err != nil {

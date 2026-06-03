@@ -142,7 +142,8 @@ func queryPlayerTeamCandidates(name, uname, idu string) ([]playerTeam, error) {
 			'defend' AS role
 		FROM battle_report
 		WHERE %s
-		ORDER BY time DESC, battle_id DESC`, strings.Join(attackWhere, " AND "), strings.Join(defendWhere, " AND "))
+		ORDER BY time DESC, battle_id DESC
+		LIMIT 5000`, strings.Join(attackWhere, " AND "), strings.Join(defendWhere, " AND "))
 
 	var rows []playerTeam
 	if err := model.Conn.Raw(query, args...).Scan(&rows).Error; err != nil {

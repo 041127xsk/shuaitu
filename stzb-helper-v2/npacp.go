@@ -17,6 +17,13 @@ import (
 
 var databaseSelected bool = false
 
+var (
+	bufMu    sync.Mutex
+	fullbuf  = []byte{}
+	fullsize = 0
+	waitbuf  = false
+)
+
 func runNpcap() {
 	// 获取所有网络接口
 	devices, err := pcap.FindAllDevs()
@@ -88,10 +95,6 @@ func captureTCPPackets(deviceName string, wg *sync.WaitGroup) {
 	}
 }
 
-var fullbuf = []byte{}
-var fullsize = 0
-var waitbuf = false
-
 func handlePacket(packet gopacket.Packet) {
 	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {
 		if appLayer := packet.ApplicationLayer(); appLayer != nil {
@@ -130,10 +133,13 @@ func handlePacket(packet gopacket.Packet) {
 
 			var buf []byte
 			if PSH != true {
+				bufMu.Lock()
 				waitbuf = true
 				fullbuf = append(fullbuf, payload...)
+				bufMu.Unlock()
 				return
 			} else {
+				bufMu.Lock()
 				if waitbuf == true {
 					waitbuf = false
 					buf = append(fullbuf, payload...)
@@ -141,6 +147,7 @@ func handlePacket(packet gopacket.Packet) {
 				} else {
 					buf = payload
 				}
+				bufMu.Unlock()
 			}
 
 			if global.IsDebug == true {

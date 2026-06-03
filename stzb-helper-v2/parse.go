@@ -13,7 +13,6 @@ import (
 	"stzbHelper/model"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	"gorm.io/gorm/clause"
 )
 
 func parseBookData(data []byte) {
@@ -249,7 +248,6 @@ func parseBattleData(data []byte) {
 		fmt.Printf("数据长度: %d\n", len(rawData))
 
 		// 遍历所有战斗记录
-		battleCount := 0
 		for _, item := range rawData {
 			// 每个item是一个数组 [战斗数据, 其他数据...]
 			battleArray, ok := item.([]interface{})
@@ -330,26 +328,9 @@ func parseBattleData(data []byte) {
 
 			fmt.Printf("保存战斗报告: %+v\n", report)
 
-			// 保存到数据库
-			result := model.Conn.Clauses(clause.OnConflict{DoNothing: true}).Create(&report)
-			if result.Error != nil {
-				log.Printf("保存战斗报告失败: %v", result.Error)
-			} else if result.RowsAffected == 0 {
-				log.Printf("检测到重复战报 (battle_id=%d)", report.BattleId)
-				markAutoScrollDuplicate(report.BattleId)
-			} else {
-				battleCount++
-				recordAutoScrollBattleID(report.BattleId)
-				if err := applyBattleReportToMaterializedStats(report); err != nil {
-					log.Printf("更新统计索引失败，已保留原始战报 battle_id=%d: %v", report.BattleId, err)
-				}
-				invalidatePlayerTeamQueryCache()
-				invalidateQueryCache(&teamWinRateQueryCache)
-				fmt.Printf("成功保存战斗报告, ID: %d\n", report.BattleId)
-			}
+			// 发送到写入队列，由单个 worker 顺序写入
+			enqueueBattleReport(report)
 		}
-
-		log.Printf("共处理 %d 条战斗记录", battleCount)
 	}
 }
 

@@ -39,6 +39,7 @@ func (a *App) startup(ctx context.Context) {
 	global.LogW.SetContext(ctx)
 	log.SetOutput(appLogOutput(os.Stdout))
 	log.Println("日志系统已连接到前端")
+	startWriteQueue()
 }
 
 func appLogOutput(stdout io.Writer) io.Writer {
@@ -1403,31 +1404,38 @@ func (a *App) GetTeamWinRate(name string, uname string, idu string, page int, pa
 		minLevel, minLevel, minLevel, minHp, minLevel, minLevel, minLevel, minHp, namePattern, unamePattern, iduPattern,
 	}
 
-	// 查询总数
-	var total int64
-	countQuery := baseQuery + ` SELECT COUNT(*) FROM aggregated`
-	if err := model.Conn.Raw(countQuery, args...).Scan(&total).Error; err != nil {
-		return global.Response{Message: "查询失败: " + err.Error()}.Error()
-	}
-
-	// 分页查询
+	// 单次查询：用窗口函数同时获取总数和分页数据
 	offset := (page - 1) * pageSize
-	dataQuery := baseQuery + ` SELECT player_name, hero1_id, hero2_id, hero3_id,
+	singleQuery := baseQuery + ` SELECT
+		player_name, hero1_id, hero2_id, hero3_id,
 		hero1_level, hero2_level, hero3_level, hero1_star, hero2_star, hero3_star,
 		total_star, idu, last_time, all_skill_info, role,
 		win_count, loss_count, draw_count, total_battles,
-		ROUND(CAST(win_count AS REAL) / total_battles * 100, 1) AS win_rate
+		ROUND(CAST(win_count AS REAL) / total_battles * 100, 1) AS win_rate,
+		COUNT(*) OVER() AS total_count
 		FROM aggregated
 		ORDER BY total_battles DESC, win_rate DESC
 		LIMIT ? OFFSET ?`
 
-	var results []TeamWinRate
-	if err := model.Conn.Raw(dataQuery, append(args, pageSize, offset)...).Scan(&results).Error; err != nil {
+	var results []struct {
+		TeamWinRate
+		TotalCount int64 `json:"total_count" gorm:"column:total_count"`
+	}
+	if err := model.Conn.Raw(singleQuery, append(args, pageSize, offset)...).Scan(&results).Error; err != nil {
 		return global.Response{Message: "查询失败: " + err.Error()}.Error()
 	}
 
+	var total int64
+	winRateResults := make([]TeamWinRate, 0, len(results))
+	for _, r := range results {
+		if total == 0 {
+			total = r.TotalCount
+		}
+		winRateResults = append(winRateResults, r.TeamWinRate)
+	}
+
 	data := map[string]interface{}{
-		"list":      results,
+		"list":      winRateResults,
 		"total":     total,
 		"page":      page,
 		"pageSize":  pageSize,
@@ -1436,7 +1444,7 @@ func (a *App) GetTeamWinRate(name string, uname string, idu string, page int, pa
 		"source":    "raw",
 	}
 	setCachedQueryData(&teamWinRateQueryCache, cacheKey, data)
-	log.Printf("查询队伍胜率: name=%s, union=%s, idu=%s, page=%d, total=%d, 结果: %d条, 耗时=%dms", name, uname, idu, page, total, len(results), data["query_ms"])
+	log.Printf("查询队伍胜率: name=%s, union=%s, idu=%s, page=%d, total=%d, 结果: %d条, 耗时=%dms", name, uname, idu, page, total, len(winRateResults), data["query_ms"])
 	return global.Response{Data: data}.Success()
 }
 
@@ -1597,7 +1605,8 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 		win_count, loss_count, draw_count, total_battles,
 		ROUND(CAST(win_count AS REAL) / total_battles * 100, 1) AS win_rate
 		FROM aggregated
-		ORDER BY total_battles DESC, win_rate DESC`
+		ORDER BY total_battles DESC, win_rate DESC
+		LIMIT 5000`
 
 	var rawResults []TeamWinRateByTeam
 	if err := model.Conn.Raw(dataQuery, args...).Scan(&rawResults).Error; err != nil {
