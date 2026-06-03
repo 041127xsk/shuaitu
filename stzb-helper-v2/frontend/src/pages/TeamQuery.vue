@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { NCard, NButton, NInput, NEmpty, NSpin, NTag, NPagination, useMessage, NGrid, NGi, NPopconfirm, NModal } from 'naive-ui'
-import { GetHiddenPlayerTeams, GetMaterializedStatsStatus, GetPlayerTeam, GetPlayerTeamExport, GetPlayerTeamRelatedBattles, HidePlayerTeam, RebuildMaterializedStats, RestoreHiddenPlayerTeam } from '../../wailsjs/go/main/App'
-import { Download, RefreshCw, Search, Swords, Star, ScrollText, EyeOff, RotateCcw } from 'lucide-vue-next'
+import { NCard, NButton, NInput, NEmpty, NSpin, NTag, NPagination, useMessage, NGrid, NGi, NPopconfirm, NModal, NForm, NFormItem, NSelect, NDivider } from 'naive-ui'
+import { DeleteNameMapping, GetHiddenPlayerTeams, GetMaterializedStatsStatus, GetNameMappings, GetPlayerTeam, GetPlayerTeamExport, GetPlayerTeamRelatedBattles, HidePlayerTeam, RebuildMaterializedStats, RestoreHiddenPlayerTeam, SaveNameMapping } from '../../wailsjs/go/main/App'
+import { Download, RefreshCw, Search, Swords, Star, ScrollText, EyeOff, RotateCcw, Settings } from 'lucide-vue-next'
 import { herocfg, skillcfg, gear_cfg } from '../cfg'
+import { buildNameMappingIndex, getMappedName, mergeHeroMapWithMappings, mergeSkillMapWithMappings } from '../utils/nameMappings.js'
 
 const heroMap = JSON.parse(herocfg)
 const skillMap = JSON.parse(skillcfg)
@@ -13,6 +14,10 @@ gear_cfg.forEach((g: any) => { gearMap[g.gear_id] = g })
 const nmessage = useMessage()
 const loading = ref(false)
 const results = ref<any[]>([])
+const nameMappings = ref<any[]>([])
+const mappingIndex = computed(() => buildNameMappingIndex(nameMappings.value))
+const mappedHeroMap = computed(() => mergeHeroMapWithMappings(heroMap, mappingIndex.value))
+const mappedSkillMap = computed(() => mergeSkillMapWithMappings(skillMap, mappingIndex.value))
 
 const searchName = ref('')
 const searchUnion = ref('')
@@ -358,37 +363,41 @@ const resolveHeroId = (id) => {
 
 const getHeroName = (id) => {
     if (!id) return ''
-    const hero = heroMap[String(resolveHeroId(id))]
+    const mapped = getMappedName(mappingIndex.value, 'hero', id)
+    if (mapped) return mapped
+    const hero = mappedHeroMap.value[String(resolveHeroId(id))]
     return hero ? hero.name : `ID:${id}`
 }
 
 const getHeroCountry = (id) => {
     if (!id) return ''
-    const hero = heroMap[String(resolveHeroId(id))]
+    const hero = mappedHeroMap.value[String(resolveHeroId(id))]
     return hero ? hero.country : ''
 }
 
 const getHeroType = (id) => {
     if (!id) return ''
-    const hero = heroMap[String(resolveHeroId(id))]
+    const hero = mappedHeroMap.value[String(resolveHeroId(id))]
     return hero ? hero.type : ''
 }
 
 const getHeroIcon = (id) => {
     if (!id) return id
-    const hero = heroMap[String(resolveHeroId(id))]
+    const hero = mappedHeroMap.value[String(resolveHeroId(id))]
     return hero ? hero.iconId : id
 }
 
 const getSkillName = (id) => {
     if (!id) return ''
-    const skill = skillMap[String(id)]
+    const mapped = getMappedName(mappingIndex.value, 'skill', id)
+    if (mapped) return mapped
+    const skill = mappedSkillMap.value[String(id)]
     return skill ? skill.name : ''
 }
 
 const getSkillQuality = (id) => {
     if (!id) return ''
-    const skill = skillMap[String(id)]
+    const skill = mappedSkillMap.value[String(id)]
     return skill ? skill.zfQuality : ''
 }
 
@@ -443,8 +452,9 @@ const parseGearInfo = (gearStr) => {
         if (gearId === 0) {
             result.push(null)
         } else {
+            const mapped = getMappedName(mappingIndex.value, 'gear', gearId)
             const gear = gearMap[gearId]
-            result.push({ id: gearId, name: gear ? gear.name : `ID:${gearId}`, level })
+            result.push({ id: gearId, name: mapped || (gear ? gear.name : `ID:${gearId}`), level })
         }
     }
     return result
@@ -457,9 +467,84 @@ const getGearDisplay = (gearStr, index) => {
     return `${g.name} Lv.${g.level}`
 }
 
+const loadNameMappings = async (silent = false) => {
+    try {
+        const res = await GetNameMappings()
+        const resp = JSON.parse(res)
+        if (resp.code == 200) {
+            nameMappings.value = resp.data || []
+        }
+    } catch (e) {
+        if (!silent) nmessage.error('加载名称映射失败: ' + e)
+    }
+}
+
+const mappingModalVisible = ref(false)
+const mappingForm = ref({ kind: 'hero', id: null as number | null, name: '' })
+const savingMapping = ref(false)
+const mappingLoading = ref(false)
+const mappingKindOptions = [
+    { label: '武将', value: 'hero' },
+    { label: '战法', value: 'skill' },
+    { label: '宝物', value: 'gear' },
+]
+const filteredNameMappings = computed(() =>
+    nameMappings.value.filter(row => row.kind === mappingForm.value.kind)
+)
+
+const openNameMappingManager = async () => {
+    mappingModalVisible.value = true
+    mappingLoading.value = true
+    await loadNameMappings()
+    mappingLoading.value = false
+}
+
+const saveNameMapping = async () => {
+    const id = Number(mappingForm.value.id)
+    const name = mappingForm.value.name.trim()
+    if (!id || !name) {
+        nmessage.warning('请输入 ID 和名称')
+        return
+    }
+    savingMapping.value = true
+    try {
+        const payload = { kind: mappingForm.value.kind, id, name }
+        const res = await SaveNameMapping(JSON.stringify(payload))
+        const resp = JSON.parse(res)
+        if (resp.code == 200) {
+            nmessage.success(resp.msg || '保存成功')
+            mappingForm.value.id = null
+            mappingForm.value.name = ''
+            await loadNameMappings(true)
+        } else {
+            nmessage.error(resp.msg)
+        }
+    } catch (e) {
+        nmessage.error('保存失败: ' + e)
+    } finally {
+        savingMapping.value = false
+    }
+}
+
+const deleteNameMapping = async (row: any) => {
+    try {
+        const res = await DeleteNameMapping(row.kind, Number(row.id))
+        const resp = JSON.parse(res)
+        if (resp.code == 200) {
+            nmessage.success(resp.msg || '已删除')
+            await loadNameMappings(true)
+        } else {
+            nmessage.error(resp.msg)
+        }
+    } catch (e) {
+        nmessage.error('删除失败: ' + e)
+    }
+}
+
 onMounted(async () => {
     await refreshStatsStatus()
     if (rebuilding.value) startStatsPolling()
+    await loadNameMappings(true)
 })
 onUnmounted(stopStatsPolling)
 </script>
@@ -493,6 +578,10 @@ onUnmounted(stopStatsPolling)
             <n-button @click="openHiddenManager()">
                 <template #icon><EyeOff :size="16" /></template>
                 隐藏管理
+            </n-button>
+            <n-button @click="openNameMappingManager()">
+                <template #icon><Settings :size="16" /></template>
+                名称映射
             </n-button>
             <div class="view-toggle">
                 <n-button-group size="small">
@@ -676,6 +765,44 @@ onUnmounted(stopStatsPolling)
                 </div>
             </div>
         </div>
+
+        <n-modal v-model:show="mappingModalVisible" preset="card" title="名称映射管理" class="mapping-modal" style="width: 600px" to="body">
+            <div class="mapping-form">
+                <n-form inline>
+                    <n-form-item label="类型">
+                        <n-select v-model:value="mappingForm.kind" :options="mappingKindOptions" style="width: 100px" />
+                    </n-form-item>
+                    <n-form-item label="ID">
+                        <n-input-number v-model:value="mappingForm.id" placeholder="原ID" style="width: 140px" :show-button="false" />
+                    </n-form-item>
+                    <n-form-item label="名称">
+                        <n-input v-model:value="mappingForm.name" placeholder="自定义名称" style="width: 140px" />
+                    </n-form-item>
+                    <n-form-item>
+                        <n-button type="primary" :loading="savingMapping" @click="saveNameMapping">保存映射</n-button>
+                    </n-form-item>
+                </n-form>
+            </div>
+            <n-divider />
+            <div v-if="mappingLoading" class="mapping-loading">
+                <n-spin size="small" />
+                <span>加载中...</span>
+            </div>
+            <n-empty v-else-if="filteredNameMappings.length === 0" description="当前类型暂无映射" />
+            <div v-else class="mapping-list">
+                <div class="mapping-row" v-for="row in filteredNameMappings" :key="`${row.kind}-${row.id}`">
+                    <span class="mapping-kind">{{ row.kind }}</span>
+                    <span class="mapping-id">ID:{{ row.id }}</span>
+                    <span class="mapping-name">{{ row.name }}</span>
+                    <n-popconfirm @positive-click="deleteNameMapping(row)">
+                        <template #trigger>
+                            <n-button size="tiny" quaternary type="error">删除</n-button>
+                        </template>
+                        确认删除该映射？
+                    </n-popconfirm>
+                </div>
+            </div>
+        </n-modal>
 
         <n-modal v-model:show="hiddenModalVisible" preset="card" title="隐藏队伍管理" class="hidden-modal">
             <div class="hidden-manager">
@@ -909,6 +1036,57 @@ onUnmounted(stopStatsPolling)
         color: #666;
         flex-wrap: wrap;
     }
+}
+
+.mapping-modal {
+    max-width: 640px;
+}
+
+.mapping-form {
+    margin-bottom: 8px;
+}
+
+.mapping-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 32px 0;
+    color: #999;
+}
+
+.mapping-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.mapping-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: #fafafa;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.mapping-kind {
+    color: #666;
+    min-width: 36px;
+}
+
+.mapping-id {
+    color: #999;
+    min-width: 80px;
+}
+
+.mapping-name {
+    flex: 1;
+    font-weight: 500;
+    color: #333;
 }
 
 .hidden-modal {
