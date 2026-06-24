@@ -838,7 +838,7 @@ var defaultConfig = AppConfig{
 	ScrollDelay:     100,
 	ScrollDuration:  100,
 	StopOnDuplicate: false,
-	DatabasePath:    `E:\openclaw\openclaw-main\战报助手\数据库\歌丨池上#7191611_X5602.db`,
+	DatabasePath:    `E:\openclaw\openclaw-main\战报助手\数据库\歌丨小池.db`,
 }
 
 func getConfigPath() string {

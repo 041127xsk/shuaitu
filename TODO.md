@@ -137,6 +137,16 @@
 
 ## P2 可选优化
 
+## ~~P2-11 stzb-helper-v2 名称映射完善与战报库重建~~ ✅ 已完成 (2026-06-03)
+- `nameMappings.js`：提供 `buildNameMappingIndex`、`getMappedName`、`mergeHeroMapWithMappings`、`mergeSkillMapWithMappings`。
+- `TeamQuery.vue`：所有展示层集成 `getHeroName`/`getSkillName`/`parseGearInfo`，优先读映射表。
+- 名称映射管理弹窗：自动检测当前查询结果中未知 ID，一键填充表单保存，支持编辑和删除。
+- `name_mapping.go`：后端 CRUD API（GetNameMappings、SaveNameMapping、DeleteNameMapping）。
+- `model/name_mapping.go`：NameMapping 模型（kind=hero/skill/gear, ref_id, name, note）。
+- 战报数据库重建：删除所有旧战报数据库（约 120 MB），新建空数据库 `歌丨小池.db`，AutoMigrate 自动建表。
+- `config.json` 和 `app.go` 默认路径已更新为新数据库路径。
+- `HANDOFF.md`：交接文档，覆盖仓库结构、环境要求、构建命令、数据库架构、核心功能、性能优化、已知问题和优先级。
+
 ## ~~P2-10 stzb-helper-v2 移除空白自动翻页侧边栏入口~~ ✅ 已完成 (2026-06-02)
 - `frontend/src/App.vue`：左侧控制栏移除“自动翻页”菜单项和未再使用的刷新图标导入。
 - `frontend_navigation_test.go`：新增静态检查，防止侧边栏再次暴露 `autoscroll` 空白入口。

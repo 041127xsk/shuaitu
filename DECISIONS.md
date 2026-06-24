@@ -467,3 +467,51 @@ stzb-helper-v2 的一赛季战报可能达到几十万到一百多万条。短�
 - 继续一次性累积原始战报：实现简单，但百万级内存峰值更高。
 - 直接流式写正式表：实现较少，但中途失败时正式表可能处于半更新状态。
 - 使用外部队列或独立统计数据库：扩展性更强，但超出当前桌面 MVP 范围。
+
+## ADR-020: 名称映射采用独立表 + 前端索引覆盖展示层
+日期：2026-06-03
+状态：已采用
+
+背景：
+队伍查询页面展示英雄、战法、宝物名称时，部分 ID 不在 cfg 数组中（如新增武将或宝物），显示为原始数字 ID，用户无法辨认。
+
+决策：
+新增 `name_mapping` 表（kind=hero/skill/gear, ref_id, name），前端 `nameMappings.js` 提供索引构建和查询函数。所有展示层（队伍查询、胜率统计）优先读映射表，映射表没有再 fallback 到 cfg 内置名称。
+
+原因：
+- 独立映射表不修改 cfg 源数据，也不修改原始战报。
+- 映射可随时增删改，不影响权威数据源。
+- 前端索引构建一次，后续查询 O(1)。
+
+影响：
+- 新增 Wails API：`GetNameMappings`、`SaveNameMapping`、`DeleteNameMapping`。
+- `TeamQuery.vue` 所有名称展示点集成 `getHeroName`/`getSkillName`。
+- 管理弹窗支持自动检测未知 ID、一键填充、编辑和删除。
+
+替代方案：
+- 直接修改 cfg 数组：会丢失自定义数据，且需要代码变更。
+- 在战报解析时硬编码映射：不灵活，每次新增武将都需要改代码。
+
+## ADR-021: 战报数据库重建采用清空 + AutoMigrate 方案
+日期：2026-06-03
+状态：已采用
+
+背景：
+旧战报数据库分散在多处副本（根目录、build/bin、tools、战报助手/数据库），累计约 120 MB。用户需要清空重建，切换到新账号（歌丨小池）。
+
+决策：
+删除所有旧战报数据库（包括 WAL/SHM 残留），创建空 SQLite 文件（WAL 模式），启动 Wails APP 时通过 GORM AutoMigrate 自动建表和索引。
+
+原因：
+- AutoMigrate 会自动创建所有表（battle_report、player_team_snapshot、team_winrate_stats 等）和 15 个索引。
+- 不需要手动建表 SQL，也不需要初始化脚本。
+- 新数据库路径通过 config.json 配置，app.go 默认值同步更新。
+
+影响：
+- `config.json` 和 `app.go` 的 `DatabasePath` 从 `歌丨池上#7191611_X5602.db` 改为 `歌丨小池.db`。
+- 旧数据库已完全删除，无法恢复。
+- EXE 已重新编译，指向新数据库。
+
+替代方案：
+- 保留旧数据库并新建：会占用额外空间，且旧数据与新账号无关。
+- 用 SQL 脚本手动建表：维护成本高，与 GORM AutoMigrate 不一致。

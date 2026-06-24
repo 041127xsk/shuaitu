@@ -286,6 +286,23 @@
   - 使用 `E:\openclaw\openclaw-main\战报助手\数据库\歌丨池上#7191611_X5602.db` 的临时副本实测：`battle_report_count=74326`，重建 `3.732s`，队伍查询 `16ms`，默认阈值胜率查询 `35ms`，相关战报展开 `1ms`。
   - 该实测库不是百万级，仅作为当前优化后的本机基线；真实一赛季百万级库仍需单独复测。
 
+## 最近一次会话进展（2026-06-03 名称映射 + 战报库重建）
+- **stzb-helper-v2 名称映射系统完善**：
+  - `nameMappings.js` 提供 `buildNameMappingIndex`、`getMappedName`、`mergeHeroMapWithMappings`、`mergeSkillMapWithMappings`。
+  - TeamQuery.vue 集成 `getHeroName`/`getSkillName`/`parseGearInfo`，所有展示优先读映射表。
+  - 名称映射管理弹窗新增**自动检测未知 ID**：遍历当前查询结果，列出不在 cfg 和映射表中的 hero/skill/gear ID。
+  - 点击未知 ID 按钮一键填充表单（类型 + ID），输入名称即可保存。
+  - 已有映射支持编辑（点"编辑"回填表单）和删除（确认后删除）。
+  - `mappingKindLabel` 辅助函数用于中文类型显示。
+  - 新增 `unknownNameItems` 计算属性、`fillMappingForm`、`mappingKindLabel` 函数。
+  - 更新 CSS：`mapping-row` 改为 flex 布局，新增 `unknown-id-list`、`mapping-row-info`、`mapping-row-actions` 样式。
+- **战报数据库重建**：
+  - 删除所有旧战报数据库（约 120 MB），包括根目录、build/bin、tools、战报助手/数据库 下的 `歌丨池上#7191611_X5602.db` 及 WAL/SHM 残留。
+  - 新建空数据库 `战报助手\数据库\歌丨小池.db`（WAL 模式，4 KB），启动 APP 后 AutoMigrate 自动建表。
+  - `config.json` 和 `app.go` 默认路径已更新为新数据库路径。
+  - EXE 已重新编译。
+- **交接文档**：新增 `HANDOFF.md`，覆盖仓库结构、环境要求、构建命令、数据库架构、核心功能、性能优化、已知问题和优先级。
+
 ## 最近一次会话进展（2026-06-02 侧边栏整理）
 - **stzb-helper-v2 移除空白自动翻页入口**：
   - 左侧控制栏移除“自动翻页”菜单项，避免点击进入不存在路由后的空白页面。
