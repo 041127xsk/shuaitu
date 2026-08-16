@@ -24,6 +24,9 @@ frontend/dist/
 
 # Wails 构建缓存
 build/*.app
+build/package/
+build/deps/
+build/installer-output/
 
 # IDE
 .vscode/

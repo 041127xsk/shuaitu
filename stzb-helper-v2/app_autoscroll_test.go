@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"stzbHelper/global"
+	"stzbHelper/model"
 	"testing"
 )
 
@@ -20,6 +21,10 @@ func TestNewAutoScrollStatusIncludesStopReason(t *testing.T) {
 	autoScrollDuplicateFound = true
 	autoScrollStopOnDuplicate = true
 	autoScrollStopReason = "检测到重复战报，停止翻页"
+	autoScrollInsertedCount = 3
+	autoScrollDuplicateCount = 5
+	autoScrollLastBattleId = 9988
+	model.CurrentDatabasePath = `E:\openclaw\openclaw-main\stzb-helper-v2\demo.db`
 
 	status := newAutoScrollStatus(1080, 1920)
 
@@ -31,6 +36,18 @@ func TestNewAutoScrollStatusIncludesStopReason(t *testing.T) {
 	}
 	if !status.StopOnDuplicate {
 		t.Fatal("StopOnDuplicate = false, want true")
+	}
+	if status.InsertedCount != 3 {
+		t.Fatalf("InsertedCount = %d, want 3", status.InsertedCount)
+	}
+	if status.DuplicateCount != 5 {
+		t.Fatalf("DuplicateCount = %d, want 5", status.DuplicateCount)
+	}
+	if status.LastBattleID != 9988 {
+		t.Fatalf("LastBattleID = %d, want 9988", status.LastBattleID)
+	}
+	if status.ActiveDatabasePath != model.CurrentDatabasePath {
+		t.Fatalf("ActiveDatabasePath = %q, want %q", status.ActiveDatabasePath, model.CurrentDatabasePath)
 	}
 }
 
@@ -53,8 +70,10 @@ func TestDuplicateBattleReportOnlyStopsWhenEnabled(t *testing.T) {
 	autoScrollStopOnDuplicate = false
 	autoScrollStopReason = ""
 	autoScrollLastBattleId = 0
+	autoScrollInsertedCount = 0
+	autoScrollDuplicateCount = 0
 
-	recordAutoScrollBattleID(1001)
+	markAutoScrollInserted(1001)
 	markAutoScrollDuplicate(1002)
 
 	if autoScrollLastBattleId != 1002 {
@@ -65,6 +84,12 @@ func TestDuplicateBattleReportOnlyStopsWhenEnabled(t *testing.T) {
 	}
 	if !strings.Contains(autoScrollStopReason, "继续翻页") {
 		t.Fatalf("autoScrollStopReason = %q, want continue message", autoScrollStopReason)
+	}
+	if autoScrollInsertedCount != 1 {
+		t.Fatalf("autoScrollInsertedCount = %d, want 1", autoScrollInsertedCount)
+	}
+	if autoScrollDuplicateCount != 1 {
+		t.Fatalf("autoScrollDuplicateCount = %d, want 1", autoScrollDuplicateCount)
 	}
 
 	autoScrollDuplicateFound = false
@@ -77,5 +102,8 @@ func TestDuplicateBattleReportOnlyStopsWhenEnabled(t *testing.T) {
 	}
 	if !strings.Contains(autoScrollStopReason, "自动翻页已停止") {
 		t.Fatalf("autoScrollStopReason = %q, want stop message", autoScrollStopReason)
+	}
+	if autoScrollDuplicateCount != 2 {
+		t.Fatalf("autoScrollDuplicateCount = %d, want 2", autoScrollDuplicateCount)
 	}
 }

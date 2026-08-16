@@ -967,6 +967,9 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
         flex-direction: column;
         gap: 4px;
         margin-top: 4px;
+        max-height: 120px;
+        overflow-y: auto;
+        padding-right: 4px;
     }
 
     &-skill {

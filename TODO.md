@@ -147,6 +147,46 @@
 - `config.json` 和 `app.go` 默认路径已更新为新数据库路径。
 - `HANDOFF.md`：交接文档，覆盖仓库结构、环境要求、构建命令、数据库架构、核心功能、性能优化、已知问题和优先级。
 
+## ~~P2-12 stzb-helper-v2 修复新建数据库进入后报错并统一默认库~~ ✅ 已完成 (2026-06-24)
+- `model/database.go`：`AutoMigrate` 补上 `name_mapping` 表；切库时关闭旧 SQLite 连接，减少文件句柄残留。
+- `app.go`：统一配置加载/保存与数据库路径解析；`CreateDb`、`SelectDb`、`AutoConnectDb` 共用同一套逻辑。
+- 新建或手动选择数据库后都会写回 `config.json`，后续启动默认进入最后一次使用的数据库，不再回连旧配置库。
+- `GetDbList`：优先展示配置数据库，并避免和 exe 目录扫描结果重复。
+- `app_db_selection_test.go`：新增测试覆盖缺表修复、名称映射空表读取、配置持久化与自动重连行为。
+- 验证：`go test ./...` 通过。
+
+## ~~P2-13 stzb-helper-v2 修复首页自动翻页配置错位并增强状态透明化~~ ✅ 已完成 (2026-07-05)
+- `frontend/src/pages/Index.vue`：首页自动翻页面板改为从 `LoadConfig()` 回填共享配置，开始翻页时使用同一份 `stop_on_duplicate` / 次数 / 延迟 / 时长参数。
+- `app.go`：`AutoScrollStatus` 新增 `inserted_count`、`duplicate_count`、`last_battle_id`、`active_database_path`，并在每轮启动时重置本轮计数。
+- `write_queue.go`：新增/重复战报分别累计并输出清晰日志；保留 `battle_report.battle_id` 唯一约束，不改变去重口径。
+- `model/database.go`：暴露 `CurrentDatabasePath`，供自动翻页状态返回当前真实连接库。
+- `frontend/src/pages/AutoScroll.vue`：独立自动翻页页同步展示当前库、本轮新增/重复数和最后 battle_id。
+- `frontend_navigation_test.go`：同步更新为“自动翻页页已恢复正式入口”的现状校验。
+- 验证：`go test ./...`、`go build ./...`、`frontend/npm run build` 通过。
+
+## ~~P2-14 stzb-helper-v2 修复同盟成员消息解析失败可观测性与字段兼容~~ ✅ 已完成 (2026-07-05)
+- `parse.go`：zlib 解压识别从固定 `78 9c` 改为标准 zlib 头校验，并输出失败原因、原始长度和数据头。
+- `parse.go`：同盟成员 JSON 解析失败、空数组、无有效成员时明确记录日志并停止写库，避免失败时清空旧成员。
+- `model/teamuser.go`：成员字段转换改为安全转换，兼容字符串数字，异常记录跳过并保留日志。
+- `team_user_parse_test.go`：新增 zlib 压缩头兼容和成员字段转换测试。
+- 验证：`go test ./...`、`go build ./...` 通过，桌面包已重新编译为 `build/bin/stzbHelper-wails.exe`。
+
+## ~~P2-15 stzb-helper-v2 收敛详细战报日志并修复宝物顺序错位~~ ✅ 已完成 (2026-07-05)
+- `parse.go`：详细战报采集去掉逐条调试输出，改为每 30 条有效战报输出一次进度，批次结束输出收到/有效/跳过汇总。
+- `write_queue.go`：写入队列不再逐条输出新增/重复日志，避免自动翻页时刷屏；新增/重复计数和错误日志仍保留。
+- `frontend/src/pages/TeamQuery.vue`：宝物解析新增 `role` 参数，攻守双方统一标准化到大营/中军/前锋三槽；页面展示、未知 ID 检测和 Excel 导出共用同一解析结果。
+- 紧凑表格修正为表头和单元格顺序一致：宝物在前，红度在后。
+- 验证：`go test ./...`、`go build ./...`、`frontend/npm run build` 通过，桌面包已重新编译为 `build/bin/stzbHelper-wails.exe`。
+
+## ~~P2-16 stzb-helper-v2 小白安装包分发准备~~ ✅ 已完成 (2026-07-05)
+- `app.go`：默认配置改为安装目录自适应，ADB 默认 `platform-tools\adb.exe`，数据库默认 `data\default.db`，不再使用开发机绝对路径。
+- `installer/prepare-release.ps1`：新增发布脚本，自动构建 Wails、复制数据库、下载 platform-tools、WebView2 和 Npcap 安装器。
+- `installer/stzbHelper.iss`：新增 Inno Setup 安装脚本，安装到 `%LOCALAPPDATA%\Programs\stzbHelper`，创建快捷方式和首次 `config.json`。
+- `installer/README.md` 与 `README.md`：新增安装包生成说明。
+- `app_distribution_test.go` / `installer_static_test.go`：新增测试覆盖可迁移默认路径、安装目录可写、数据库/config 不覆盖和开发机路径不泄漏。
+- `prepare-release.ps1 -CompileInstaller`：构建机缺 Inno Setup 时会自动下载并安装 Inno Setup 6.7.3，再生成安装包。
+- 验证：`go test ./...`、`go build ./...` 通过；已生成 `build/installer-output/stzbHelper-Setup.exe`。
+
 ## ~~P2-10 stzb-helper-v2 移除空白自动翻页侧边栏入口~~ ✅ 已完成 (2026-06-02)
 - `frontend/src/App.vue`：左侧控制栏移除“自动翻页”菜单项和未再使用的刷新图标导入。
 - `frontend_navigation_test.go`：新增静态检查，防止侧边栏再次暴露 `autoscroll` 空白入口。

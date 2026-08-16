@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"stzbHelper/model"
 	"sync"
@@ -33,24 +32,27 @@ func writeQueueWorker() {
 }
 
 func processBattleWrite(report model.BattleReport) {
+	if model.Conn == nil {
+		log.Printf("保存战斗报告失败: 数据库未连接 (battle_id=%d)", report.BattleId)
+		return
+	}
+
 	result := model.Conn.Clauses(clause.OnConflict{DoNothing: true}).Create(&report)
 	if result.Error != nil {
 		log.Printf("保存战斗报告失败: %v", result.Error)
 		return
 	}
 	if result.RowsAffected == 0 {
-		log.Printf("检测到重复战报 (battle_id=%d)", report.BattleId)
 		markAutoScrollDuplicate(report.BattleId)
 		return
 	}
 
-	recordAutoScrollBattleID(report.BattleId)
+	markAutoScrollInserted(report.BattleId)
 	if err := applyBattleReportToMaterializedStats(report); err != nil {
 		log.Printf("更新统计索引失败，已保留原始战报 battle_id=%d: %v", report.BattleId, err)
 	}
 	invalidatePlayerTeamQueryCache()
 	invalidateQueryCache(&teamWinRateQueryCache)
-	fmt.Printf("成功保存战斗报告, ID: %d\n", report.BattleId)
 }
 
 func enqueueBattleReport(report model.BattleReport) {

@@ -4,6 +4,7 @@ import { CheckNpcap } from '../wailsjs/go/main/App'
 const Index = () => import('./pages/Index.vue')
 const TeamUser = () => import('./pages/TeamUser.vue')
 const Task = () => import('./pages/Task.vue')
+const AutoScroll = () => import('./pages/AutoScroll.vue')
 const GroupWu = () => import('./pages/GroupWu.vue')
 const SelectDb = () => import('./pages/SelectDb.vue')
 const Logs = () => import('./pages/Logs.vue')
@@ -31,6 +32,12 @@ const routes = [
         name: 'task',
         component: Task,
         meta: { title: '攻城任务' }
+    },
+    {
+        path: '/autoscroll',
+        name: 'autoscroll',
+        component: AutoScroll,
+        meta: { title: '自动翻页' }
     },
     {
         path: '/groupWu',

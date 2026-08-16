@@ -215,6 +215,13 @@ const resp = await GetTeamWinRate(JSON.stringify({ mode, min_level, ... }))
 4. **`apikey.txt`** — 疑似真实 API key，不要提交到 git
 5. **物化统计默认阈值** — 只覆盖 30 级 / 20000 兵力；其他阈值回退原始查询
 
+## 最近修复
+
+- **2026-06-24 新建数据库进入后报错修复**
+  - `model.InitDB` 已把 `name_mapping` 纳入 `AutoMigrate`，新建空数据库可直接进入队伍查询/名称映射页面。
+  - `CreateDb`、`SelectDb`、`AutoConnectDb` 现在共用统一的配置与路径解析逻辑；新建或切换数据库后会立刻写回 `config.json.database_path`。
+  - 首页自动连接不再把当前会话切回旧配置库，应用重启后会默认进入最后一次选择的数据库。
+
 ---
 
 ## 当前优先级

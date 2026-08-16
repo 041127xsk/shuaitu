@@ -71,3 +71,21 @@ wails build
 - Go 1.23+
 - Node.js 18+
 - Wails CLI v2.11+
+
+## Windows 安装包
+
+项目提供 `installer/prepare-release.ps1` 和 Inno Setup 脚本，用于生成适合发给普通用户的一键安装包。
+
+```powershell
+.\installer\prepare-release.ps1 -DatabasePath "E:\path\to\your.db" -CompileInstaller
+```
+
+安装包会内置主程序、数据库、ADB、WebView2 安装器和 Npcap 安装器，并在安装时创建当前电脑可用的 `config.json`。
+
+输出文件：
+
+```text
+build\installer-output\stzbHelper-Setup.exe
+```
+
+详细说明见 `installer/README.md`。

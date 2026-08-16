@@ -3,7 +3,7 @@ import { h, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NMessageProvider, NDialogProvider, NConfigProvider, NLayout, NLayoutSider, NLayoutContent, NMenu, NIcon, NButton } from 'naive-ui'
 import { zhCN, dateZhCN, darkTheme } from 'naive-ui'
-import { Home, Users, ClipboardList, Swords, UserRoundSearch, ScrollText, Bug, Moon, Sun, BookOpen, MessageSquare, BarChart3 } from 'lucide-vue-next'
+import { Home, Users, ClipboardList, Swords, UserRoundSearch, ScrollText, Bug, Moon, Sun, BookOpen, MessageSquare, BarChart3, RefreshCw } from 'lucide-vue-next'
 import { useThemeStore } from './stores/theme'
 
 import TitleBar from './components/TitleBar.vue'
@@ -39,6 +39,11 @@ const menuOptions = [
         label: '攻城任务',
         key: 'task',
         icon: renderIcon(ClipboardList)
+    },
+    {
+        label: '自动翻页',
+        key: 'autoscroll',
+        icon: renderIcon(RefreshCw)
     },
     {
         label: '分组武勋',

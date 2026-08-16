@@ -22,8 +22,12 @@ export function CreateDb(arg1) {
   return window['go']['main']['App']['CreateDb'](arg1);
 }
 
-export function CreateTask(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['CreateTask'](arg1, arg2, arg3, arg4);
+export function CreateTask(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['CreateTask'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+export function DeleteDb(arg1) {
+  return window['go']['main']['App']['DeleteDb'](arg1);
 }
 
 export function DeleteNameMapping(arg1, arg2) {
@@ -50,6 +54,10 @@ export function DisableGetReport() {
   return window['go']['main']['App']['DisableGetReport']();
 }
 
+export function DiscoverAdbPaths() {
+  return window['go']['main']['App']['DiscoverAdbPaths']();
+}
+
 export function EnableBookData() {
   return window['go']['main']['App']['EnableBookData']();
 }
@@ -70,8 +78,16 @@ export function ExportTeamUser() {
   return window['go']['main']['App']['ExportTeamUser']();
 }
 
+export function GetAttendanceSummary() {
+  return window['go']['main']['App']['GetAttendanceSummary']();
+}
+
 export function GetAutoScrollStatus() {
   return window['go']['main']['App']['GetAutoScrollStatus']();
+}
+
+export function GetCaptureModeStatus() {
+  return window['go']['main']['App']['GetCaptureModeStatus']();
 }
 
 export function GetDbList() {
@@ -158,8 +174,16 @@ export function RebuildMaterializedStats() {
   return window['go']['main']['App']['RebuildMaterializedStats']();
 }
 
+export function RenameDb(arg1, arg2) {
+  return window['go']['main']['App']['RenameDb'](arg1, arg2);
+}
+
 export function RestoreHiddenPlayerTeam(arg1) {
   return window['go']['main']['App']['RestoreHiddenPlayerTeam'](arg1);
+}
+
+export function SaveAdbProfiles(arg1) {
+  return window['go']['main']['App']['SaveAdbProfiles'](arg1);
 }
 
 export function SaveConfig(arg1) {
@@ -170,8 +194,16 @@ export function SaveNameMapping(arg1) {
   return window['go']['main']['App']['SaveNameMapping'](arg1);
 }
 
+export function ScanAdbDevices() {
+  return window['go']['main']['App']['ScanAdbDevices']();
+}
+
 export function SelectDb(arg1) {
   return window['go']['main']['App']['SelectDb'](arg1);
+}
+
+export function SetActiveAdbProfile(arg1) {
+  return window['go']['main']['App']['SetActiveAdbProfile'](arg1);
 }
 
 export function StartAutoScroll(arg1) {
@@ -184,4 +216,12 @@ export function StatisticsReport(arg1) {
 
 export function StopAutoScroll() {
   return window['go']['main']['App']['StopAutoScroll']();
+}
+
+export function UpdateTask(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['main']['App']['UpdateTask'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+}
+
+export function UpdateTaskAttendanceRule(arg1, arg2, arg3) {
+  return window['go']['main']['App']['UpdateTaskAttendanceRule'](arg1, arg2, arg3);
 }

@@ -9,6 +9,7 @@ const groupdata = ref([])
 const loading = ref(false)
 const sortKey = ref('total_wu')
 const sortOrder = ref('desc')
+const ensureArray = (value) => Array.isArray(value) ? value : []
 
 const toggleSort = (key) => {
     if (sortKey.value === key) {
@@ -33,6 +34,11 @@ const sortedData = computed(() => {
 const totalMembers = computed(() => groupdata.value.reduce((sum, g) => sum + g.member_count, 0))
 const totalWu = computed(() => groupdata.value.reduce((sum, g) => sum + g.total_wu, 0))
 const avgWu = computed(() => groupdata.value.length > 0 ? Math.round(totalWu.value / groupdata.value.length) : 0)
+const avgPower = computed(() => {
+    if (!groupdata.value.length) return 0
+    const total = groupdata.value.reduce((sum, g) => sum + (g.average_power || 0), 0)
+    return Math.round(total / groupdata.value.length)
+})
 
 function formatWu(val) {
     const n = Math.floor(val)
@@ -42,13 +48,17 @@ function formatWu(val) {
     return n
 }
 
+function formatPower(val) {
+    return Math.round(Number(val || 0)).toLocaleString('zh-CN')
+}
+
 function getData() {
     loading.value = true
     groupdata.value = []
     GetGroupWu().then(v => {
         let resp = JSON.parse(v)
         if (resp.code == 200) {
-            groupdata.value = resp.data
+            groupdata.value = ensureArray(resp.data)
         } else {
             nmessage.error(resp.msg)
         }
@@ -66,7 +76,7 @@ onMounted(() => {
 
 <template>
     <div class="page-groupwu">
-        <n-grid :cols="3" :x-gap="16" :y-gap="16" class="stat-grid">
+        <n-grid :cols="'s 1 m 2 l 4'" :x-gap="16" :y-gap="16" class="stat-grid">
             <n-gi>
                 <n-card embedded size="small">
                     <n-statistic label="总人数" :value="totalMembers" />
@@ -82,13 +92,18 @@ onMounted(() => {
                     <n-statistic label="平均武勋" :value="formatWu(avgWu)" />
                 </n-card>
             </n-gi>
+            <n-gi>
+                <n-card embedded size="small">
+                    <n-statistic label="团均势力值" :value="formatPower(avgPower)" />
+                </n-card>
+            </n-gi>
         </n-grid>
 
         <n-card class="page-card" embedded>
             <div class="page-header">
                 <div class="page-header-info">
                     <h2 class="page-title">分组武勋</h2>
-                    <p class="page-desc">更新武勋数据请同步成员数据</p>
+                    <p class="page-desc">更新武勋和势力值请同步成员数据</p>
                 </div>
                 <n-space>
                     <n-button @click="getData" :loading="loading">
@@ -105,6 +120,7 @@ onMounted(() => {
                         <th class="sortable-th" @click="toggleSort('member_count')">人数 <span class="sort-icon" v-if="sortKey==='member_count'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
                         <th class="sortable-th" @click="toggleSort('total_wu')">总武勋 <span class="sort-icon" v-if="sortKey==='total_wu'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
                         <th class="sortable-th" @click="toggleSort('average_wu')">平均武勋 <span class="sort-icon" v-if="sortKey==='average_wu'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
+                        <th class="sortable-th" @click="toggleSort('average_power')">平均势力值 <span class="sort-icon" v-if="sortKey==='average_power'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
                         <th class="sortable-th" @click="toggleSort('zero_wu_count')">0武勋人数 <span class="sort-icon" v-if="sortKey==='zero_wu_count'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
                     </tr>
                 </thead>
@@ -116,6 +132,7 @@ onMounted(() => {
                         <td>{{ u.member_count }}</td>
                         <td>{{ formatWu(u.total_wu) }}</td>
                         <td>{{ formatWu(u.average_wu) }}</td>
+                        <td>{{ formatPower(u.average_power) }}</td>
                         <td>
                             <span :class="{ 'zero-warn': u.zero_wu_count > 0 }">{{ u.zero_wu_count }}</span>
                         </td>

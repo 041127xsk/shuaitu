@@ -2,6 +2,7 @@ package model
 
 import (
 	"log"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -10,15 +11,25 @@ import (
 )
 
 var Conn *gorm.DB
+var CurrentDatabasePath string
 
 // InitDB 初始化数据库连接
 // databasePath 可以是绝对路径或相对路径，可以带或不带 .db 后缀
 func InitDB(databasePath string) {
-	// 如果路径已经以 .db 结尾，就不再添加
-	dsn := databasePath
-	if !strings.HasSuffix(dsn, ".db") {
-		dsn = dsn + ".db"
+	var previousSQLDB *gorm.DB
+	if Conn != nil {
+		previousSQLDB = Conn
 	}
+
+	resolvedPath := databasePath
+	if !strings.HasSuffix(strings.ToLower(resolvedPath), ".db") {
+		resolvedPath = resolvedPath + ".db"
+	}
+	if absPath, err := filepath.Abs(resolvedPath); err == nil {
+		resolvedPath = absPath
+	}
+
+	dsn := resolvedPath
 	dsn = dsn + "?cache=shared&mode=rwc&_journal_mode=WAL&_busy_timeout=5000&_synchronous=NORMAL&_temp_store=MEMORY"
 	// SQLite 需要正斜杠
 	dsn = strings.ReplaceAll(dsn, "\\", "/")
@@ -40,7 +51,7 @@ func InitDB(databasePath string) {
 	sqlDB.SetConnMaxLifetime(0)
 	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
 
-	err = db.AutoMigrate(&TeamUser{}, &Task{}, &Report{}, &BattleReport{}, &PlayerTeamSnapshot{}, &TeamWinRateStat{}, &MaterializedState{}, &MaterializedTeamExclusion{})
+	err = db.AutoMigrate(&TeamUser{}, &Task{}, &Report{}, &BattleReport{}, &PlayerTeamSnapshot{}, &TeamWinRateStat{}, &MaterializedState{}, &MaterializedTeamExclusion{}, &NameMapping{})
 	if err != nil {
 		log.Println("数据库迁移失败:", err)
 		return
@@ -70,6 +81,15 @@ func InitDB(databasePath string) {
 		}
 	}
 
+	if previousSQLDB != nil {
+		if oldDB, err := previousSQLDB.DB(); err == nil {
+			if err := oldDB.Close(); err != nil {
+				log.Println("关闭旧数据库连接失败:", err)
+			}
+		}
+	}
+
 	Conn = db
+	CurrentDatabasePath = resolvedPath
 	log.Println("数据库连接成功")
 }

@@ -311,7 +311,7 @@ const doExport = async () => {
             const skill1Info = getSkillInfo(skills[0]?.skills)
             const skill2Info = getSkillInfo(skills[1]?.skills)
             const skill3Info = getSkillInfo(skills[2]?.skills)
-            const gears = parseGearInfo(r.gear)
+            const gears = parseGearInfo(r.gear, r.role)
             const gear1Info = gears[0] ? `${gears[0].name} Lv.${gears[0].level}` : ''
             const gear2Info = gears[1] ? `${gears[1].name} Lv.${gears[1].level}` : ''
             const gear3Info = gears[2] ? `${gears[2].name} Lv.${gears[2].level}` : ''
@@ -466,33 +466,42 @@ const unknownNameItems = computed(() => {
         parseSkillInfo(team.all_skill_info, team.role).forEach(group => {
             (group.skills || []).forEach((skill: any) => add('skill', skill.id))
         })
-        parseGearInfo(team.gear).filter(Boolean).forEach((g: any) => add('gear', g.id))
+        parseGearInfo(team.gear, team.role).filter(Boolean).forEach((g: any) => add('gear', g.id))
     })
     return items
 })
 
-const parseGearInfo = (gearStr) => {
-    if (!gearStr) return []
-    const slots = gearStr.split(';').filter(s => s.trim() !== '')
-    const result = []
+const parseGearInfo = (gearStr, role) => {
+    if (!gearStr) return [null, null, null]
+    const slots = String(gearStr).split(';').filter(s => s.trim() !== '')
+    let parsed = []
     for (let i = 0; i < slots.length; i++) {
         const parts = slots[i].split(',')
         if (parts.length !== 3) continue
         const gearId = parseInt(parts[0])
         const level = parseInt(parts[1])
+        const rawHeroIndex = parseInt(parts[2])
+        const heroIndex = rawHeroIndex >= 1 && rawHeroIndex <= 6
+            ? rawHeroIndex
+            : (role === 'defend' ? i + 4 : i + 1)
         if (gearId === 0) {
-            result.push(null)
+            parsed.push({ heroIndex, gear: null })
         } else {
             const mapped = getMappedName(mappingIndex.value, 'gear', gearId)
             const gear = gearMap[gearId]
-            result.push({ id: gearId, name: mapped || (gear ? gear.name : `ID:${gearId}`), level })
+            parsed.push({ heroIndex, gear: { id: gearId, name: mapped || (gear ? gear.name : `ID:${gearId}`), level } })
         }
     }
-    return result
+    if (role === 'defend') {
+        parsed = parsed.filter(g => g.heroIndex >= 4).reverse()
+    } else {
+        parsed = parsed.filter(g => g.heroIndex <= 3)
+    }
+    return [0, 1, 2].map(i => parsed[i]?.gear || null)
 }
 
-const getGearDisplay = (gearStr, index) => {
-    const gears = parseGearInfo(gearStr)
+const getGearDisplay = (gearStr, role, index) => {
+    const gears = parseGearInfo(gearStr, role)
     const g = gears[index]
     if (!g) return ''
     return `${g.name} Lv.${g.level}`
@@ -692,14 +701,14 @@ onUnmounted(stopStatsPolling)
                                         <span class="hero-mini-name">{{ getHeroName(team.hero3_id) }}<span class="hero-mini-type">{{ getHeroType(team.hero3_id) }}</span></span>
                                     </div>
                                 </td>
-                                <td class="star-cell">
-                                    <span class="star-value">{{ team.total_star }}</span>
-                                </td>
                                 <td class="gear-cell">
-                                    <div v-for="(g, gi) in parseGearInfo(team.gear)" :key="gi" class="gear-item">
+                                    <div v-for="(g, gi) in parseGearInfo(team.gear, team.role)" :key="gi" class="gear-item">
                                         <span v-if="g" class="gear-name">{{ g.name }} <span class="gear-level">Lv.{{ g.level }}</span></span>
                                         <span v-else class="gear-empty">-</span>
                                     </div>
+                                </td>
+                                <td class="star-cell">
+                                    <span class="star-value">{{ team.total_star }}</span>
                                 </td>
                                 <td class="role-cell">
                                     <n-tag :type="roleType(team.role)" size="small" :bordered="false">{{ roleLabel(team.role) }}</n-tag>
@@ -784,8 +793,8 @@ onUnmounted(stopStatsPolling)
                                             {{ getSkillName(skill.id) }}
                                         </span>
                                     </div>
-                                    <div v-if="getGearDisplay(team.gear, i-1)" class="hero-gear">
-                                        <span class="gear-tag">{{ getGearDisplay(team.gear, i-1) }}</span>
+                                    <div v-if="getGearDisplay(team.gear, team.role, i-1)" class="hero-gear">
+                                        <span class="gear-tag">{{ getGearDisplay(team.gear, team.role, i-1) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -806,17 +815,17 @@ onUnmounted(stopStatsPolling)
             </div>
         </div>
 
-        <n-modal v-model:show="mappingModalVisible" preset="card" title="名称映射管理" class="mapping-modal" style="width: 600px" to="body">
+        <n-modal v-model:show="mappingModalVisible" preset="card" title="名称映射管理" class="mapping-modal" style="width: min(600px, calc(100vw - 48px))" to="body">
             <div class="mapping-form">
                 <n-form inline>
                     <n-form-item label="类型">
-                        <n-select v-model:value="mappingForm.kind" :options="mappingKindOptions" style="width: 100px" />
+                        <n-select v-model:value="mappingForm.kind" :options="mappingKindOptions" style="width: 140px" />
                     </n-form-item>
                     <n-form-item label="ID">
-                        <n-input-number v-model:value="mappingForm.id" placeholder="原ID" style="width: 140px" :show-button="false" />
+                        <n-input-number v-model:value="mappingForm.id" placeholder="原ID" style="width: 160px" :show-button="false" />
                     </n-form-item>
                     <n-form-item label="名称">
-                        <n-input v-model:value="mappingForm.name" placeholder="自定义名称" style="width: 140px" />
+                        <n-input v-model:value="mappingForm.name" placeholder="自定义名称" style="width: 160px" />
                     </n-form-item>
                     <n-form-item>
                         <n-button type="primary" :loading="savingMapping" @click="saveNameMapping">保存映射</n-button>
@@ -914,7 +923,7 @@ onUnmounted(stopStatsPolling)
         font-size: 18px;
         font-weight: 600;
         margin: 0 0 4px;
-        color: #333;
+        color: var(--color-text);
     }
 
     .query-desc {
@@ -960,11 +969,11 @@ onUnmounted(stopStatsPolling)
         display: flex;
         gap: 16px;
         padding: 12px 16px;
-        background: #fafafa;
+        background: var(--color-surface-hover);
         border-radius: 8px;
         margin-bottom: 16px;
         font-size: 13px;
-        color: #666;
+        color: var(--color-text-secondary);
     }
 }
 
@@ -984,19 +993,19 @@ onUnmounted(stopStatsPolling)
         }
 
         th {
-            background: #fafafa;
+            background: var(--color-surface-hover);
             font-weight: 500;
-            color: #666;
+            color: var(--color-text-secondary);
         }
 
         tr:hover td {
-            background: #fafafa;
+            background: var(--color-surface-hover);
         }
 
         .player-cell {
             .player-name {
                 font-weight: 500;
-                color: #333;
+                color: var(--color-text);
             }
             .player-idu {
                 display: block;
@@ -1024,7 +1033,7 @@ onUnmounted(stopStatsPolling)
 
             .hero-mini-name {
                 font-size: 12px;
-                color: #666;
+                color: var(--color-text-secondary);
             }
 
             .hero-mini-type {
@@ -1073,7 +1082,7 @@ onUnmounted(stopStatsPolling)
 .related-battles {
     margin-top: 10px;
     padding: 10px 12px;
-    background: #fff;
+    background: var(--color-surface);
     border: 1px solid #eee;
     border-radius: 6px;
 
@@ -1093,7 +1102,7 @@ onUnmounted(stopStatsPolling)
         align-items: center;
         gap: 10px;
         font-size: 12px;
-        color: #666;
+        color: var(--color-text-secondary);
         flex-wrap: wrap;
     }
 }
@@ -1129,7 +1138,7 @@ onUnmounted(stopStatsPolling)
     justify-content: space-between;
     gap: 12px;
     padding: 8px 12px;
-    background: #fafafa;
+    background: var(--color-surface-hover);
     border-radius: 6px;
     font-size: 13px;
 }
@@ -1153,7 +1162,7 @@ onUnmounted(stopStatsPolling)
 }
 
 .mapping-name {
-    color: #333;
+    color: var(--color-text);
 }
 
 .mapping-empty {
@@ -1202,7 +1211,7 @@ onUnmounted(stopStatsPolling)
     padding: 12px;
     border: 1px solid #eee;
     border-radius: 8px;
-    background: #fafafa;
+    background: var(--color-surface-hover);
 }
 
 .hidden-main {
@@ -1218,13 +1227,13 @@ onUnmounted(stopStatsPolling)
     gap: 8px;
     font-size: 13px;
     font-weight: 600;
-    color: #333;
+    color: var(--color-text);
     flex-wrap: wrap;
 }
 
 .hidden-heroes {
     font-size: 13px;
-    color: #666;
+    color: var(--color-text-secondary);
 }
 
 .hidden-time {
@@ -1242,7 +1251,7 @@ onUnmounted(stopStatsPolling)
 .list-view {
     .player-group {
         margin-bottom: 20px;
-        background: #fff;
+        background: var(--color-surface);
         border-radius: 10px;
         border: 1px solid #f0f0f0;
         overflow: hidden;
@@ -1253,12 +1262,12 @@ onUnmounted(stopStatsPolling)
         justify-content: space-between;
         align-items: center;
         padding: 12px 16px;
-        background: #fafafa;
+        background: var(--color-surface-hover);
         border-bottom: 1px solid #f0f0f0;
 
         .player-title {
             font-weight: 600;
-            color: #333;
+            color: var(--color-text);
         }
 
         .player-count {
@@ -1275,7 +1284,7 @@ onUnmounted(stopStatsPolling)
         padding: 12px;
         border-radius: 8px;
         margin-bottom: 10px;
-        background: #fafafa;
+        background: var(--color-surface-hover);
 
         &:last-child {
             margin-bottom: 0;
@@ -1289,7 +1298,7 @@ onUnmounted(stopStatsPolling)
 
             .team-idu {
                 font-size: 12px;
-                color: #666;
+                color: var(--color-text-secondary);
             }
 
             .team-star {
@@ -1316,7 +1325,7 @@ onUnmounted(stopStatsPolling)
                 flex-direction: column;
                 gap: 6px;
                 padding: 10px;
-                background: #fff;
+                background: var(--color-surface);
                 border-radius: 6px;
                 border: 1px solid #e8e8e8;
                 flex: 1;
@@ -1355,10 +1364,10 @@ onUnmounted(stopStatsPolling)
                     .skill-tag {
                         padding: 2px 8px;
                         font-size: 11px;
-                        background: #f9f9f9;
+                        background: var(--color-surface-hover);
                         border: 1px solid;
                         border-radius: 4px;
-                        color: #666;
+                        color: var(--color-text-secondary);
                         white-space: nowrap;
                     }
                 }
@@ -1368,7 +1377,7 @@ onUnmounted(stopStatsPolling)
                         display: inline-block;
                         padding: 2px 8px;
                         font-size: 11px;
-                        background: #f5f3ff;
+                        background: rgba(139, 92, 246, 0.1);
                         border: 1px solid #8b5cf6;
                         border-radius: 4px;
                         color: #8b5cf6;

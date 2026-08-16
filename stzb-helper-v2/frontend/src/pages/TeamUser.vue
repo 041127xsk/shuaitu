@@ -30,6 +30,8 @@ const syncuser = () => {
     })
 }
 
+const formatNumber = (value: number | string) => Number(value || 0).toLocaleString('zh-CN')
+
 function getUserList() {
     loading.value = true
     teamUsers.value = []
@@ -106,6 +108,16 @@ onMounted(() => {
                         <span class="member-name">{{ user.name }}</span>
                         <n-tag :bordered="false" type="info" size="small">{{ user.group }}</n-tag>
                     </div>
+                    <div class="member-highlights">
+                        <div class="highlight-item">
+                            <span class="highlight-label">势力值</span>
+                            <span class="highlight-value">{{ formatNumber(user.power) }}</span>
+                        </div>
+                        <div class="highlight-item">
+                            <span class="highlight-label">周武勋</span>
+                            <span class="highlight-value highlight-value--wu">{{ formatNumber(user.wu) }}</span>
+                        </div>
+                    </div>
                     <n-grid :cols="2" :x-gap="12" :y-gap="8" class="member-stats">
                         <n-gi>
                             <div class="stat-item">
@@ -115,26 +127,14 @@ onMounted(() => {
                         </n-gi>
                         <n-gi>
                             <div class="stat-item">
-                                <span class="stat-label">势力</span>
-                                <span class="stat-value">{{ user.power }}</span>
-                            </div>
-                        </n-gi>
-                        <n-gi>
-                            <div class="stat-item">
-                                <span class="stat-label">周武勋</span>
-                                <span class="stat-value highlight">{{ user.wu }}</span>
-                            </div>
-                        </n-gi>
-                        <n-gi>
-                            <div class="stat-item">
                                 <span class="stat-label">总贡献</span>
-                                <span class="stat-value">{{ user.contribute_total }}</span>
+                                <span class="stat-value">{{ formatNumber(user.contribute_total) }}</span>
                             </div>
                         </n-gi>
                         <n-gi>
                             <div class="stat-item">
                                 <span class="stat-label">周贡献</span>
-                                <span class="stat-value">{{ user.contribute_week }}</span>
+                                <span class="stat-value">{{ formatNumber(user.contribute_week) }}</span>
                             </div>
                         </n-gi>
                         <n-gi>
@@ -191,8 +191,8 @@ onMounted(() => {
 }
 
 .member-list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
 }
 
@@ -226,6 +226,39 @@ onMounted(() => {
     margin-top: 4px;
 }
 
+.member-highlights {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.highlight-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.highlight-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.highlight-value {
+    font-size: 18px;
+    line-height: 1.2;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.highlight-value--wu {
+    color: #d97706;
+}
+
 .stat-item {
     display: flex;
     flex-direction: column;
@@ -241,9 +274,14 @@ onMounted(() => {
     font-size: 14px;
     color: var(--color-text);
     font-weight: 500;
+}
 
-    &.highlight {
-        color: var(--color-accent);
+@media (max-width: 768px) {
+    .member-highlights {
+        grid-template-columns: 1fr;
+    }
+    .member-list {
+        grid-template-columns: 1fr;
     }
 }
 </style>

@@ -11,6 +11,8 @@ type Task struct {
 	Name            string                `json:"name" gorm:"column:name"`
 	Time            int                   `json:"time" gorm:"column:time"`
 	Pos             int                   `json:"pos" gorm:"column:pos"`
+	DisMaxLevel     int                   `json:"dis_max_level" gorm:"column:dis_max_level"`
+	AtkMinLevel     int                   `json:"atk_min_level" gorm:"column:atk_min_level"`
 	Target          []string              `json:"target" gorm:"column:target;serializer:json"`
 	TargetUserNum   int                   `json:"target_user_num" gorm:"column:target_user_num"`
 	CompleteUserNum int                   `json:"complete_user_num" gorm:"column:complete_user_num"`

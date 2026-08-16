@@ -384,3 +384,40 @@ Remove-Item Env:STZB_PERF_DB
 - 队伍查询：约 16 ms。
 - 默认阈值胜率查询：约 35 ms。
 - 相关战报展开：约 1 ms。
+
+## stzb-helper-v2 Windows 安装包发布
+
+### 准备完整发布目录
+```powershell
+Set-Location E:\openclaw\openclaw-main\stzb-helper-v2
+.\installer\prepare-release.ps1 -DatabasePath "E:\path\to\your.db"
+```
+
+如果不传 `-DatabasePath`，脚本会优先读取 `build\bin\config.json` 的 `database_path`，把该数据库复制为安装包内的 `data\default.db`。
+
+脚本会准备：
+- `stzbHelper-wails.exe`
+- `data\default.db`
+- `platform-tools\adb.exe`
+- `deps\MicrosoftEdgeWebView2Setup.exe`
+- `deps\npcap-installer.exe`
+
+### 编译一键安装包
+运行：
+
+```powershell
+.\installer\prepare-release.ps1 -DatabasePath "E:\path\to\your.db" -CompileInstaller
+```
+
+如果构建机没有 Inno Setup 6，脚本会自动下载并安装 Inno Setup 6.7.3。也可以通过 `-InnoSetupPath` 指定已有 `ISCC.exe`。
+
+输出：
+```text
+build\installer-output\stzbHelper-Setup.exe
+```
+
+### 分发注意
+- 安装目录默认是 `%LOCALAPPDATA%\Programs\stzbHelper`，确保普通用户运行时可写数据库和配置。
+- 安装器首次安装会创建 `config.json`，数据库路径指向安装目录的 `data\default.db`，ADB 指向安装目录的 `platform-tools\adb.exe`。
+- 升级安装不会覆盖已有 `data\default.db` 和 `config.json`。
+- Npcap 是抓包驱动，安装时可能弹出管理员权限提示；MuMu 模拟器和游戏账号仍需要用户自行安装和登录。

@@ -11,7 +11,9 @@ export function CheckUpdate():Promise<string>;
 
 export function CreateDb(arg1:string):Promise<string>;
 
-export function CreateTask(arg1:string,arg2:number,arg3:Array<string>,arg4:Array<string>):Promise<string>;
+export function CreateTask(arg1:string,arg2:number,arg3:Array<string>,arg4:Array<string>,arg5:number,arg6:number):Promise<string>;
+
+export function DeleteDb(arg1:string):Promise<string>;
 
 export function DeleteNameMapping(arg1:string,arg2:number):Promise<string>;
 
@@ -25,6 +27,8 @@ export function DisableGetBattleReport():Promise<string>;
 
 export function DisableGetReport():Promise<string>;
 
+export function DiscoverAdbPaths():Promise<string>;
+
 export function EnableBookData():Promise<string>;
 
 export function EnableGetBattleReport():Promise<string>;
@@ -35,7 +39,11 @@ export function ExportPlayerTeam(arg1:string,arg2:string,arg3:string):Promise<st
 
 export function ExportTeamUser():Promise<string>;
 
+export function GetAttendanceSummary():Promise<string>;
+
 export function GetAutoScrollStatus():Promise<string>;
+
+export function GetCaptureModeStatus():Promise<string>;
 
 export function GetDbList():Promise<string>;
 
@@ -79,16 +87,28 @@ export function LoadConfig():Promise<string>;
 
 export function RebuildMaterializedStats():Promise<string>;
 
+export function RenameDb(arg1:string,arg2:string):Promise<string>;
+
 export function RestoreHiddenPlayerTeam(arg1:number):Promise<string>;
+
+export function SaveAdbProfiles(arg1:string):Promise<string>;
 
 export function SaveConfig(arg1:string):Promise<string>;
 
 export function SaveNameMapping(arg1:string):Promise<string>;
 
+export function ScanAdbDevices():Promise<string>;
+
 export function SelectDb(arg1:string):Promise<string>;
+
+export function SetActiveAdbProfile(arg1:string):Promise<string>;
 
 export function StartAutoScroll(arg1:string):Promise<string>;
 
 export function StatisticsReport(arg1:number):Promise<string>;
 
 export function StopAutoScroll():Promise<string>;
+
+export function UpdateTask(arg1:number,arg2:string,arg3:number,arg4:Array<string>,arg5:Array<string>,arg6:number,arg7:number):Promise<string>;
+
+export function UpdateTaskAttendanceRule(arg1:number,arg2:number,arg3:number):Promise<string>;

@@ -303,6 +303,57 @@
   - EXE 已重新编译。
 - **交接文档**：新增 `HANDOFF.md`，覆盖仓库结构、环境要求、构建命令、数据库架构、核心功能、性能优化、已知问题和优先级。
 
+## 最近一次会话进展（2026-06-24 新库报错修复）
+- **stzb-helper-v2 新建数据库进入后报错已修复**：
+  - `model.InitDB` 的 `AutoMigrate` 补上 `name_mapping` 表，新建空数据库后可直接进入队伍查询/名称映射相关页面，不再出现缺表报错。
+  - `app.go` 抽出统一的配置加载、保存和数据库路径解析逻辑，`CreateDb`、`SelectDb`、`AutoConnectDb` 现在共用同一套规则。
+  - 新建数据库或手动选择数据库后，都会把最终绝对路径写回 `config.json`，重启后默认连接最后一次使用的数据库，不会再被旧配置库覆盖。
+  - `GetDbList` 现在优先展示配置中的数据库，并避免和 exe 目录扫描结果重复。
+  - `model.InitDB` 在切换数据库时会关闭旧的 SQLite 连接，减少 Windows 下数据库文件句柄残留。
+  - 新增 `app_db_selection_test.go`，覆盖新库自动建 `name_mapping`、`GetNameMappings` 空表返回、`CreateDb`/`SelectDb` 配置写回、`AutoConnectDb` 使用最后持久化数据库。
+  - 已执行 `go test ./...`，全部通过。
+
+## 最近一次会话进展（2026-07-05 自动翻页状态透明化）
+- **stzb-helper-v2 首页队伍战报采集配置与状态展示已修复**：
+  - 首页 `Index.vue` 现在会从 `LoadConfig()` 回填共享自动翻页配置：`scroll_count`、`scroll_delay`、`scroll_duration`、`stop_on_duplicate`，开始翻页时不再偷用默认值。
+  - `AutoScrollStatus` 新增 `inserted_count`、`duplicate_count`、`last_battle_id`、`active_database_path`，首页和 `AutoScroll.vue` 会同步展示当前写入数据库、本轮新增/重复条数和最后处理的 `battle_id`。
+  - `model.InitDB` 新增 `CurrentDatabasePath`，记录当前真实连接库绝对路径，状态返回不再是带 query string 的 SQLite DSN。
+  - 自动翻页启动日志不再输出“本次仅记录重复战报并继续翻页”这类推测性文案，改为明确说明“上次最后 battle_id + 当前重复策略”；写入时分别输出“新增战报”和“重复战报”，结束时输出本轮汇总。
+  - `write_queue.go` 仍保持 `battle_report.battle_id` 唯一约束去重，不改变重复判定口径、抓包频率、失败重试或断点续跑规则，只增强可见性。
+  - 现有侧边栏导航测试已同步到“自动翻页页已恢复为正式页面”的新产品状态，`go test ./...`、`go build ./...` 与 `frontend/npm run build` 已通过。
+
+## 最近一次会话进展（2026-07-05 同盟成员解析稳定性）
+- **stzb-helper-v2 同盟成员消息解析失败排查与修复**：
+  - `parseZlibData` 改为识别标准 zlib 头，不再只处理 `78 9c`，可兼容 `78 da` 等压缩级别产生的同盟成员包。
+  - `parseTeamUser` 增加 JSON 解析错误、空数组、无有效成员、解压失败的详细日志，失败时保留旧成员数据，不再误删。
+  - `model.ToTeamUserWithError` 新增安全字段转换，支持数字字段以字符串形式出现，字段异常时跳过单条异常记录而不是 panic。
+  - 新增 `team_user_parse_test.go` 覆盖 zlib 头兼容、字符串数字字段、短字段拒绝。
+  - 已执行 `go test ./...`、`go build ./...`，并重新编译原始桌面包 `build/bin/stzbHelper-wails.exe`。
+
+## 最近一次会话进展（2026-07-05 战报日志收敛与宝物顺序修复）
+- **stzb-helper-v2 详细战报采集日志已节流**：
+  - `parseBattleData` 去掉原始包、单条 battle_id、完整 report、武将/进阶数组等高频调试输出。
+  - 同一批详细战报按“收到/有效/跳过”计数，每 30 条有效战报输出一次进度，批次结束输出一次汇总。
+  - `write_queue.go` 不再对每条新增/重复战报打日志，仍保留新增/重复状态计数、错误日志和自动翻页结束汇总。
+- **队伍查询宝物展示顺序已统一**：
+  - `TeamQuery.vue` 的 `parseGearInfo(gearStr, role)` 按攻守角色标准化成大营/中军/前锋三槽；守方与现有技能展示一样做反转映射。
+  - 紧凑表格修正为表头“宝物、红度”和单元格“宝物、红度”一致。
+  - 页面卡片、紧凑表格、未知宝物 ID 检测和 Excel 导出统一复用同一宝物解析结果。
+- 新增 `battle_log_test.go` 和 `team_query_gear_test.go` 覆盖日志节流与宝物顺序静态断言；已执行 `go test ./...`、`go build ./...`、`frontend/npm run build`，并重新编译原始桌面包 `build/bin/stzbHelper-wails.exe`。
+
+## 最近一次会话进展（2026-07-05 小白安装包分发准备）
+- **stzb-helper-v2 分发版路径已改为安装目录自适应**：
+  - `app.go` 不再把开发机 `C:\Users\27557...adb.exe` 和 `E:\openclaw...db` 作为默认路径。
+  - 缺失或空配置会自动回填安装目录下的 `platform-tools\adb.exe` 和 `data\default.db`。
+  - 新增 `app_distribution_test.go` 覆盖无配置/空配置时的可迁移默认路径。
+- **新增 Windows 安装包脚本**：
+  - `installer/prepare-release.ps1` 会构建 Wails exe、复制当前数据库为 `data\default.db`、下载 Android platform-tools、WebView2 安装器和 Npcap 安装器。
+  - `installer/stzbHelper.iss` 生成 Inno Setup 安装包，安装到用户可写目录 `%LOCALAPPDATA%\Programs\stzbHelper`，创建桌面快捷方式和 `config.json`。
+  - 安装包升级时不覆盖已有 `data\default.db` 和 `config.json`，避免破坏用户数据。
+  - 新增 `installer_static_test.go` 锁定安装目录可写、依赖文件和禁止开发机路径泄漏。
+- `installer/prepare-release.ps1 -CompileInstaller` 现在会在构建机缺少 Inno Setup 时自动下载并安装 Inno Setup 6.7.3，然后编译最终安装包。
+- 已执行 `go test ./...`、`go build ./...`，并成功生成 `build/installer-output/stzbHelper-Setup.exe`。
+
 ## 最近一次会话进展（2026-06-02 侧边栏整理）
 - **stzb-helper-v2 移除空白自动翻页入口**：
   - 左侧控制栏移除“自动翻页”菜单项，避免点击进入不存在路由后的空白页面。

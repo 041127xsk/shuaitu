@@ -15,6 +15,16 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+func getCmd92CaptureMode() string {
+	if global.ExVar.NeedGetBattleData {
+		return "battle_detail"
+	}
+	if global.ExVar.NeedGetReport {
+		return "attendance_report"
+	}
+	return "none"
+}
+
 func parseBookData(data []byte) {
 	var raw []interface{}
 	err := json.Unmarshal(data, &raw)
@@ -179,11 +189,16 @@ func ParseData(cmdId int, data []byte) {
 	} else if cmdId == 103 {
 		parseTeamUser(data)
 	} else if cmdId == 92 {
-		if global.ExVar.NeedGetBattleData {
-			log.Println("已开启获取详细战报,目前会暂停考勤战报的获取")
+		mode := getCmd92CaptureMode()
+		switch mode {
+		case "battle_detail":
+			log.Println("cmdId=92 当前模式: battle_detail，开始解析详细战报")
 			parseBattleData(data)
-		} else {
+		case "attendance_report":
+			log.Println("cmdId=92 当前模式: attendance_report，开始解析考勤守军战报")
 			parseReport(data)
+		default:
+			log.Println("cmdId=92 当前模式: none，本次跳过解析")
 		}
 	}
 }
@@ -235,29 +250,33 @@ type BattleData struct {
 
 func parseBattleData(data []byte) {
 	msgdata := parseZlibData(data)
-	fmt.Println("原始数据:", string(msgdata))
 
 	if len(msgdata) > 0 {
 		var rawData RawData
 		err := json.Unmarshal(msgdata, &rawData)
 		if err != nil {
-			log.Printf("解析JSON失败: %v", err)
+			log.Printf("解析详细战报JSON失败: %v", err)
 			return
 		}
 
-		fmt.Printf("数据长度: %d\n", len(rawData))
+		receivedCount := len(rawData)
+		validCount := 0
+		skippedCount := 0
+		var lastBattleID int64
 
 		// 遍历所有战斗记录
 		for _, item := range rawData {
 			// 每个item是一个数组 [战斗数据, 其他数据...]
 			battleArray, ok := item.([]interface{})
 			if !ok || len(battleArray) == 0 {
+				skippedCount++
 				continue
 			}
 
 			// 第一个元素是战斗数据
 			battleMap, ok := battleArray[0].(map[string]interface{})
 			if !ok {
+				skippedCount++
 				continue
 			}
 
@@ -266,15 +285,15 @@ func parseBattleData(data []byte) {
 			jsonData, err := json.Marshal(battleMap)
 			if err != nil {
 				log.Printf("转换战斗数据失败: %v", err)
+				skippedCount++
 				continue
 			}
 
 			if err := json.Unmarshal(jsonData, &battleData); err != nil {
 				log.Printf("解析战斗数据失败: %v", err)
+				skippedCount++
 				continue
 			}
-
-			fmt.Printf("处理战斗ID: %d\n", battleData.BattleId)
 
 			widStr := ""
 			switch v := battleData.Wid.(type) {
@@ -326,19 +345,27 @@ func parseBattleData(data []byte) {
 			// 解析进阶信息和武将信息
 			report = parseHeroInfo(report)
 
-			fmt.Printf("保存战斗报告: %+v\n", report)
-
 			// 发送到写入队列，由单个 worker 顺序写入
 			enqueueBattleReport(report)
+
+			validCount++
+			lastBattleID = battleData.BattleId
+			if validCount%30 == 0 {
+				log.Printf("详细战报采集中：已处理%d条，最后battle_id=%d", validCount, lastBattleID)
+			}
 		}
+
+		log.Printf("详细战报解析完成：收到%d条，有效%d条，跳过%d条", receivedCount, validCount, skippedCount)
+		return
 	}
+
+	log.Printf("详细战报解析失败：解压后为空，原始长度=%d，原始头=%s", len(data), previewBytes(data, 16))
 }
 
 // 解析武将信息
 func parseHeroInfo(report model.BattleReport) model.BattleReport {
 	// 解析进攻方进阶信息
 	attackAdvance := splitAndFilter(report.AttackAdvance, ";")
-	fmt.Printf("进攻方进阶信息: %v\n", attackAdvance)
 
 	attackTotal := int64(0)
 	for i, advance := range attackAdvance {
@@ -364,7 +391,6 @@ func parseHeroInfo(report model.BattleReport) model.BattleReport {
 
 	// 解析防守方进阶信息
 	defendAdvance := splitAndFilter(report.DefendAdvance, ";")
-	fmt.Printf("防守方进阶信息: %v\n", defendAdvance)
 
 	defendTotal := int64(0)
 	for i, advance := range defendAdvance {
@@ -390,7 +416,6 @@ func parseHeroInfo(report model.BattleReport) model.BattleReport {
 
 	// 解析进攻方武将信息
 	attackHeroInfo := splitAndFilter(report.AttackAllHeroInfo, ";")
-	fmt.Printf("进攻方武将信息: %v\n", attackHeroInfo)
 
 	for i, hero := range attackHeroInfo {
 		if len(hero) >= 2 {
@@ -413,7 +438,6 @@ func parseHeroInfo(report model.BattleReport) model.BattleReport {
 
 	// 解析防守方武将信息
 	defendHeroInfo := splitAndFilter(report.DefendAllHeroInfo, ";")
-	fmt.Printf("防守方武将信息: %v\n", defendHeroInfo)
 
 	for i, hero := range defendHeroInfo {
 		if len(hero) >= 2 {
@@ -478,34 +502,42 @@ func parseReport(data []byte) {
 
 		var reports []model.Report
 		var neededreports []model.Report
+		filteredWids := map[int]int{} // 被 wid 过滤掉的战报坐标分布
 
 		for _, v := range jsondata {
 			reportJSON, err := json.Marshal(v[0])
 			if err != nil {
-				fmt.Println("Error marshalling report:", err)
+				log.Printf("Error marshalling report: %v", err)
 				continue
 			}
 
 			var report model.Report
 			err = json.Unmarshal(reportJSON, &report)
 			if err != nil {
-				fmt.Println("Error unmarshalling report:", err)
+				log.Printf("Error unmarshalling report: %v", err)
 				continue
 			}
 
 			reports = append(reports, report)
 			if report.Wid == global.ExVar.NeededReportPos {
 				neededreports = append(neededreports, report)
+			} else {
+				filteredWids[report.Wid]++
 			}
 		}
 
-		log.Println("解析同盟战报成功,共" + strconv.Itoa(len(reports)) + "条 符合条件的共" + strconv.Itoa(len(neededreports)) + "条")
+		log.Printf("解析同盟战报成功,共%d条 符合条件的共%d条", len(reports), len(neededreports))
+		if len(filteredWids) > 0 {
+			// 可观测性：wid 过滤明细（排查漏采）
+			log.Printf("注意：%d 条战报因 wid 不匹配被过滤(目标坐标=%d), 坐标分布=%v",
+				len(reports)-len(neededreports), global.ExVar.NeededReportPos, filteredWids)
+		}
 		if len(neededreports) > 0 {
 			action := model.Conn.Save(&neededreports)
-			fmt.Println("数据库共新增" + strconv.Itoa(int(action.RowsAffected)) + "条战报")
+			log.Printf("数据库共新增%d条战报", action.RowsAffected)
 		}
 	} else {
-		log.Println("解析同盟战报消息失败")
+		log.Printf("解析同盟战报消息失败")
 	}
 }
 
@@ -518,39 +550,89 @@ func parseTeamUser(data []byte) {
 	msgdata := parseZlibData(data)
 	if len(msgdata) > 0 {
 		var jsondata [][]any
-		json.Unmarshal(msgdata, &jsondata)
+		if err := json.Unmarshal(msgdata, &jsondata); err != nil {
+			log.Printf("解析同盟成员JSON失败: %v, 原始长度=%d, 解压长度=%d, 数据预览=%s",
+				err, len(data), len(msgdata), previewPayload(msgdata))
+			return
+		}
+		if len(jsondata) == 0 {
+			log.Printf("解析同盟成员消息失败: 成员数组为空, 原始长度=%d, 解压长度=%d, 数据预览=%s",
+				len(data), len(msgdata), previewPayload(msgdata))
+			return
+		}
 
 		var ids []int
 		var teamUsers []model.TeamUser
-		for _, item := range jsondata {
-			teamUsers = append(teamUsers, model.ToTeamUser(item))
-			ids = append(ids, int(item[0].(float64)))
+		for index, item := range jsondata {
+			teamUser, err := model.ToTeamUserWithError(item)
+			if err != nil {
+				log.Printf("跳过异常同盟成员记录 index=%d: %v", index, err)
+				continue
+			}
+			teamUsers = append(teamUsers, teamUser)
+			ids = append(ids, teamUser.Id)
+		}
+		if len(teamUsers) == 0 {
+			log.Printf("解析同盟成员消息失败: 没有有效成员记录, 原始成员数=%d", len(jsondata))
+			return
 		}
 
 		log.Println("同盟成员消息解析成功！共" + strconv.Itoa(len(teamUsers)) + "人")
+		if model.Conn == nil {
+			log.Println("保存同盟成员失败: 数据库未连接")
+			return
+		}
 		model.Conn.Save(teamUsers)
 		model.Conn.Not("id", ids).Delete(model.TeamUser{})
 	} else {
-		log.Println("解析同盟成员消息失败")
+		log.Printf("解析同盟成员消息失败: 解压后为空, 原始长度=%d, 原始头=%s", len(data), previewBytes(data, 16))
 	}
 }
 
 func parseZlibData(data []byte) []byte {
-	if len(data) >= 2 && data[0] == 120 && data[1] == 156 {
+	if looksLikeZlib(data) {
 		compressedReader := bytes.NewReader(data)
 		zlibReader, err := zlib.NewReader(compressedReader)
 		if err != nil {
-			fmt.Println("Error creating zlib reader:", err)
+			log.Printf("zlib解压失败: %v, 原始长度=%d, 原始头=%s", err, len(data), previewBytes(data, 16))
 			return []byte{}
 		}
 		defer zlibReader.Close()
 
 		uncompressedData, err := io.ReadAll(zlibReader)
 		if err != nil {
-			fmt.Println("Error reading uncompressed data:", err)
+			log.Printf("读取zlib数据失败: %v, 原始长度=%d, 原始头=%s", err, len(data), previewBytes(data, 16))
 			return []byte{}
 		}
 		return uncompressedData
 	}
 	return data
+}
+
+func looksLikeZlib(data []byte) bool {
+	if len(data) < 2 {
+		return false
+	}
+	if data[0]&0x0f != 8 {
+		return false
+	}
+	return (((int(data[0]) << 8) + int(data[1])) % 31) == 0
+}
+
+func previewBytes(data []byte, limit int) string {
+	if len(data) == 0 {
+		return ""
+	}
+	if len(data) > limit {
+		data = data[:limit]
+	}
+	return fmt.Sprintf("% x", data)
+}
+
+func previewPayload(data []byte) string {
+	text := strings.TrimSpace(string(data))
+	if len(text) > 200 {
+		return text[:200] + "..."
+	}
+	return text
 }
