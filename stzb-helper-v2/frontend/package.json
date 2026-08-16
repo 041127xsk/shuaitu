@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
+    "test:selector": "node scripts/test-team-select-options.mjs",
     "type-check": "vue-tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vue/shared": "^3.5.13",
     "lucide-vue-next": "^0.474.0",
     "pinia": "^2.3.1",
     "pinia-plugin-persistedstate": "^4.2.0",

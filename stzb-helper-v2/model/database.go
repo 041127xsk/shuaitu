@@ -4,7 +4,6 @@ import (
 	"log"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -41,17 +40,7 @@ func InitDB(databasePath string) {
 		return
 	}
 
-	sqlDB, err := db.DB()
-	if err != nil {
-		log.Println("获取底层连接失败:", err)
-		return
-	}
-	sqlDB.SetMaxOpenConns(1)
-	sqlDB.SetMaxIdleConns(1)
-	sqlDB.SetConnMaxLifetime(0)
-	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
-
-	err = db.AutoMigrate(&TeamUser{}, &Task{}, &Report{}, &BattleReport{}, &PlayerTeamSnapshot{}, &TeamWinRateStat{}, &MaterializedState{}, &MaterializedTeamExclusion{}, &NameMapping{})
+err = db.AutoMigrate(&TeamUser{}, &Task{}, &Report{}, &BattleReport{}, &PlayerTeamSnapshot{}, &TeamWinRateStat{}, &MaterializedState{}, &MaterializedTeamExclusion{}, &NameMapping{}, &ManualPlayerTeam{}, &HiddenPlayerTeam{})
 	if err != nil {
 		log.Println("数据库迁移失败:", err)
 		return
@@ -74,6 +63,11 @@ func InitDB(databasePath string) {
 		"CREATE INDEX IF NOT EXISTS idx_twrs_search ON team_winrate_stats(mode, min_level, min_hp, player_name, idu, total_battles DESC, win_rate DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_twrs_team_search ON team_winrate_stats(mode, min_level, min_hp, lineup_key, normalized_skill_key, total_battles DESC, win_rate DESC)",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_mte_unique ON materialized_team_exclusion(player_name, role, idu, lineup_key, normalized_skill_key)",
+		"CREATE INDEX IF NOT EXISTS idx_manual_team_player ON manual_player_team(player_name)",
+		"CREATE INDEX IF NOT EXISTS idx_manual_team_union ON manual_player_team(union_name)",
+		"CREATE INDEX IF NOT EXISTS idx_manual_team_idu ON manual_player_team(idu)",
+		"CREATE INDEX IF NOT EXISTS idx_manual_team_enabled ON manual_player_team(enabled)",
+		"CREATE INDEX IF NOT EXISTS idx_name_mapping_kind ON name_mapping(kind)",
 	}
 	for _, sql := range indexes {
 		if err := db.Exec(sql).Error; err != nil {

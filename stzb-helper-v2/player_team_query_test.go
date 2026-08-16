@@ -103,3 +103,39 @@ func TestNewPlayerTeamQueryMetaIncludesElapsedAndCacheHit(t *testing.T) {
 		t.Fatalf("QueryMS = %d, want at least 1000", meta.QueryMS)
 	}
 }
+
+func TestBuildEffectivePlayerTeamsPrefersManualCorrection(t *testing.T) {
+	rows := []playerTeam{
+		{PlayerName: "甲", BattleID: 9, SourceType: "battle_report", SourceID: 9, Time: 300, Hero1ID: 1001, Hero2ID: 1002, Hero3ID: 1003},
+		{PlayerName: "甲", BattleID: 101, SourceType: "manual", SourceID: 101, Manual: true, Time: 100, Hero1ID: 1001, Hero2ID: 1002, Hero3ID: 1004},
+	}
+
+	got := buildEffectivePlayerTeams(rows)
+
+	if len(got) != 1 {
+		t.Fatalf("len(buildEffectivePlayerTeams()) = %d, want 1", len(got))
+	}
+	if !got[0].Manual || got[0].SourceID != 101 {
+		t.Fatalf("kept team = %#v, want manual correction source_id 101", got[0])
+	}
+}
+
+func TestFilterHiddenPlayerTeamsHidesOnlyMatchingSourceAndRole(t *testing.T) {
+	rows := []playerTeam{
+		{BattleID: 1, SourceType: "battle_report", SourceID: 1, Role: "attack"},
+		{BattleID: 1, SourceType: "battle_report", SourceID: 1, Role: "defend"},
+		{BattleID: 2, SourceType: "manual", SourceID: 2, Role: "attack", Manual: true},
+	}
+	hidden := map[string]bool{
+		hiddenPlayerTeamKey("battle_report", 1, "attack"): true,
+	}
+
+	got := filterHiddenPlayerTeams(rows, hidden)
+
+	if len(got) != 2 {
+		t.Fatalf("len(filterHiddenPlayerTeams()) = %d, want 2", len(got))
+	}
+	if got[0].Role != "defend" || got[1].SourceType != "manual" {
+		t.Fatalf("remaining teams = %#v, want defend battle row and manual row", got)
+	}
+}

@@ -279,6 +279,26 @@ adb -s 127.0.0.1:16384 shell "curl -s -o /dev/null -w '%{http_code}' http://baid
 
 ---
 
+## stzb-helper-v2 前端回归
+
+队伍查询新增/编辑弹窗里的武将与战法选择器有独立小测试：
+
+```powershell
+cd stzb-helper-v2\frontend
+npm run test:selector
+npm run build
+```
+
+完整桌面包构建仍在 `stzb-helper-v2` 目录执行：
+
+```powershell
+cd stzb-helper-v2
+go test ./...
+wails build -skipbindings -o stzbHelper-wails-selector.exe
+```
+
+---
+
 ## 战报抓包（stzbHelper 方案）
 
 ### 原理
