@@ -733,10 +733,39 @@ func refreshSnapshotsForPlayers(tx *gorm.DB, players []string) error {
 		return nil
 	}
 
-	var reports []model.BattleReport
-	if err := tx.Where("attack_name IN ? OR defend_name IN ?", players, players).Order("battle_id ASC").Find(&reports).Error; err != nil {
+	// 只取 Npc==0 的战报：battleReportTeamCandidates 对 Npc!=0 的记录直接返回 nil，
+	// 拉回来也产生不了任何候选队伍，纯属浪费。
+	// 加上 npc = 0 后即可命中 idx_br_attack_related / idx_br_defend_related（最左列正是 npc），
+	// 把「一页页翻全表」变成「查目录直接定位」。
+	// 拆成两次查询是因为 SQLite 对 "npc = ? AND (a IN ? OR b IN ?)" 的 OR 优化不可靠，
+	// 拆开后两次都能稳定各自命中索引。
+	var attackReports []model.BattleReport
+	if err := tx.Where("npc = 0 AND attack_name IN ?", players).Find(&attackReports).Error; err != nil {
 		return err
 	}
+	var defendReports []model.BattleReport
+	if err := tx.Where("npc = 0 AND defend_name IN ?", players).Find(&defendReports).Error; err != nil {
+		return err
+	}
+
+	// 按 battle_id 去重合并（同一条战报可能两边都命中）。
+	// 不保留 ORDER BY battle_id：buildEffectivePlayerTeams 内部会 sort.SliceStable 整体重排，
+	// 数据库传来的顺序对最终结果没有影响，省掉一次排序开销。
+	seen := make(map[int64]bool, len(attackReports)+len(defendReports))
+	reports := make([]model.BattleReport, 0, len(attackReports)+len(defendReports))
+	for _, r := range attackReports {
+		if !seen[r.BattleId] {
+			seen[r.BattleId] = true
+			reports = append(reports, r)
+		}
+	}
+	for _, r := range defendReports {
+		if !seen[r.BattleId] {
+			seen[r.BattleId] = true
+			reports = append(reports, r)
+		}
+	}
+
 	playerSet := map[string]bool{}
 	for _, player := range players {
 		playerSet[player] = true

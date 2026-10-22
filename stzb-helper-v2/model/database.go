@@ -40,6 +40,13 @@ func InitDB(databasePath string) {
 		return
 	}
 
+	// 连接池：默认 MaxIdleConns=2，导致每条 SQL 都反复建连、重复解析。
+	// SQLite 在 WAL 下是「单写者 + 多读者」模型，开太大反而争锁，10 足够。
+	if sqlDB, sqlErr := db.DB(); sqlErr == nil {
+		sqlDB.SetMaxOpenConns(10)
+		sqlDB.SetMaxIdleConns(5)
+	}
+
 err = db.AutoMigrate(&TeamUser{}, &Task{}, &Report{}, &BattleReport{}, &PlayerTeamSnapshot{}, &TeamWinRateStat{}, &MaterializedState{}, &MaterializedTeamExclusion{}, &NameMapping{}, &ManualPlayerTeam{}, &HiddenPlayerTeam{})
 	if err != nil {
 		log.Println("数据库迁移失败:", err)
@@ -68,6 +75,9 @@ err = db.AutoMigrate(&TeamUser{}, &Task{}, &Report{}, &BattleReport{}, &PlayerTe
 		"CREATE INDEX IF NOT EXISTS idx_manual_team_idu ON manual_player_team(idu)",
 		"CREATE INDEX IF NOT EXISTS idx_manual_team_enabled ON manual_player_team(enabled)",
 		"CREATE INDEX IF NOT EXISTS idx_name_mapping_kind ON name_mapping(kind)",
+		// 考勤表：任务页按 wid 统计战报条数（GetReportNumByTaskId），前端轮询调用。
+		// 此前该表无任何索引，等于每次轮询全表扫描一次。
+		"CREATE INDEX IF NOT EXISTS idx_reports_wid ON reports(wid)",
 	}
 	for _, sql := range indexes {
 		if err := db.Exec(sql).Error; err != nil {

@@ -15,6 +15,7 @@ import (
 	"strings"
 	"stzbHelper/global"
 	"stzbHelper/model"
+	"sync"
 	"syscall"
 	"time"
 
@@ -741,6 +742,11 @@ var (
 	autoScrollStopReason      string
 	autoScrollInsertedCount   int
 	autoScrollDuplicateCount  int
+	// 持久 adb shell 会话（用于快速滑动，避免每滑重启 adb 进程）
+	adbShellCmd    *exec.Cmd
+	adbShellStdin  io.WriteCloser
+	adbShellStdout io.ReadCloser
+	adbShellMutex  sync.Mutex
 )
 
 var commandRunner = func(name string, arg ...string) (string, error) {
@@ -920,16 +926,30 @@ func (a *App) StartAutoScroll(jsonStr string) string {
 		const maxConsecutiveFailures = 5
 
 		// 动态翻页策略：
-		// - 滑动间隔保持用户配置（可短，如 100ms），快速翻页
-		// - 但监测「连续多滑未新增战报」：说明可能滑到未加载区域或列表底部，
+		// - 使用持久 adb shell 会话（swipeViaShell）：复用进程使单滑从 ~570ms 降到 ~150ms，
+		//   同时每滑之间 Go 层可随时响应「停止/暂停/重复检测」，保证听指挥
+		// - 自适应间隔：滑动太快游戏懒加载跟不上会漏采。系统根据"是否有新战报入库"
+		//   自动调节每滑间隔——跟得上就逐渐加快，触发暂停就减慢，收敛到最快稳定速度。
+		// - 监测「连续多滑未新增战报」：说明可能滑到未加载区域或列表底部，
 		//   此时暂停等待加载（pauseWaitMs），避免漏采中部战报
-		// - 每 20 滑额外做一次深呼吸等待，兜底懒加载延迟
 		noNewThreshold := 5               // 连续多少滑未新增战报则暂停等待
 		noNewCount := 0                   // 当前连续无新增计数
 		lastInserted := autoScrollInsertedCount
 		const pauseWaitMs = 800           // 暂停等待加载时长
-		const loadBreatheInterval = 20    // 深呼吸周期
-		const loadBreatheExtraMs = 500    // 深呼吸额外时长
+		const loadBreatheInterval = 20    // 深呼吸周期：每 20 滑额外等待一次
+		const loadBreatheExtraMs = 500    // 深呼吸额外时长（给游戏列表缓冲加载时间）
+		// 自适应间隔参数
+		adaptiveDelay := delay            // 初始用用户配置，之后自动调节
+		const delayMinMs = 30             // 间隔下限（过快游戏加载跟不上）
+		const delayMaxMs = 300            // 间隔上限
+		const delayStepDown = 20          // 触发暂停后间隔加大（变慢）
+		const delayStepUp = 50            // 每滑正常则间隔减小 50ms（快速加速）
+
+		// 启动持久 adb shell 会话
+		if !ensureAdbShell(adbPath, adbSerial) {
+			log.Printf("持久 adb shell 启动失败，回退到独立进程模式")
+		}
+		defer closeAdbShell()
 
 		for i := 0; i < count; i++ {
 			select {
@@ -948,7 +968,8 @@ func (a *App) StartAutoScroll(jsonStr string) string {
 				return
 			}
 
-			success := swipeWithAdb(adbPath, adbSerial, cx, yStart, yEnd, duration)
+			// 通过持久 shell 会话滑动（快速且逐滑可控），失败自动回退独立进程
+			success := swipeViaShell(adbPath, adbSerial, cx, yStart, yEnd, duration)
 			if success {
 				consecutiveFailures = 0
 			} else {
@@ -967,26 +988,36 @@ func (a *App) StartAutoScroll(jsonStr string) string {
 			if (i+1)%100 == 0 || i == 0 {
 				log.Printf("[%d/%d] 滑动完成", autoScrollCurrent, count)
 			}
-
 			// 检测连续无新增战报：有新增则重置计数，无新增则累计
 			if autoScrollInsertedCount > lastInserted {
 				noNewCount = 0
 				lastInserted = autoScrollInsertedCount
+				// 每滑（有新增）直接减 50ms 快速加速，下限保护保留
+				if adaptiveDelay > delayMinMs {
+					adaptiveDelay -= delayStepUp
+					if adaptiveDelay < delayMinMs {
+						adaptiveDelay = delayMinMs
+					}
+				}
 			} else {
 				noNewCount++
 			}
 
 			if i < count-1 {
-				// 默认按用户配置的短间隔继续
-				waitMs := delay
-				if waitMs < 50 {
-					waitMs = 50
+				// 每滑节奏等待：用自适应间隔（初始为用户配置）
+				waitMs := adaptiveDelay
+				if waitMs < delayMinMs {
+					waitMs = delayMinMs
 				}
-				// 连续多滑无新增：暂停等待游戏懒加载
+				// 连续多滑无新增：暂停等待游戏懒加载，并调大间隔（降低速度保加载）
 				if noNewCount >= noNewThreshold {
 					noNewCount = 0
-					log.Printf("[%d/%d] 连续 %d 滑未新增战报，暂停 %dms 等待加载 (累计已入库 %d 条)",
-						autoScrollCurrent, count, noNewThreshold, pauseWaitMs, autoScrollInsertedCount)
+					adaptiveDelay += delayStepDown
+					if adaptiveDelay > delayMaxMs {
+						adaptiveDelay = delayMaxMs
+					}
+					log.Printf("[%d/%d] 连续 %d 滑未新增战报，暂停 %dms 等待加载，间隔调至 %dms (累计已入库 %d 条)",
+						autoScrollCurrent, count, noNewThreshold, pauseWaitMs, adaptiveDelay, autoScrollInsertedCount)
 					waitMs += pauseWaitMs
 				}
 				// 周期性深呼吸，兜底加载延迟
@@ -1111,6 +1142,71 @@ func swipeWithAdb(adbPath, adbSerial string, cx, yStart, yEnd, duration int) boo
 	if err != nil {
 		log.Printf("swipeWithAdb: ADB命令失败, err=%v, output=%s", err, output)
 		return false
+	}
+	return true
+}
+
+// ensureAdbShell 启动/复用持久 adb shell 会话。
+// 通过 stdin 逐条发送命令，避免每滑重启 adb.exe（每次 ~570ms → ~150ms），
+// 同时保持 Go 层逐滑可控（可随时中断）。
+func ensureAdbShell(adbPath, adbSerial string) bool {
+	adbShellMutex.Lock()
+	defer adbShellMutex.Unlock()
+	if adbShellCmd != nil && adbShellCmd.Process != nil {
+		return true
+	}
+	cmd := exec.Command(adbPath, "-s", adbSerial, "shell")
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		CreationFlags: 0x08000000, // CREATE_NO_WINDOW
+	}
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		log.Printf("ensureAdbShell: StdinPipe失败: %v", err)
+		return false
+	}
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Printf("ensureAdbShell: StdoutPipe失败: %v", err)
+		return false
+	}
+	if err := cmd.Start(); err != nil {
+		log.Printf("ensureAdbShell: 启动失败: %v", err)
+		return false
+	}
+	adbShellCmd = cmd
+	adbShellStdin = stdin
+	adbShellStdout = stdout
+	// 丢弃 shell 输出，避免管道阻塞
+	go io.Copy(io.Discard, stdout)
+	return true
+}
+
+// closeAdbShell 关闭持久 adb shell 会话
+func closeAdbShell() {
+	adbShellMutex.Lock()
+	defer adbShellMutex.Unlock()
+	if adbShellCmd != nil && adbShellCmd.Process != nil {
+		adbShellCmd.Process.Kill()
+		adbShellCmd.Wait()
+	}
+	adbShellCmd = nil
+	adbShellStdin = nil
+	adbShellStdout = nil
+}
+
+// swipeViaShell 通过持久 adb shell 会话执行单次滑动（快速且可控）。
+// 失败时回退到独立进程方式。
+func swipeViaShell(adbPath, adbSerial string, cx, yStart, yEnd, duration int) bool {
+	adbShellMutex.Lock()
+	writeCloser := adbShellStdin
+	adbShellMutex.Unlock()
+	if writeCloser == nil {
+		return swipeWithAdb(adbPath, adbSerial, cx, yStart, yEnd, duration)
+	}
+	cmdStr := fmt.Sprintf("input swipe %d %d %d %d %d\n", cx, yStart, cx, yEnd, duration)
+	if _, err := io.WriteString(writeCloser, cmdStr); err != nil {
+		log.Printf("swipeViaShell: 写入失败, 回退独立进程: %v", err)
+		return swipeWithAdb(adbPath, adbSerial, cx, yStart, yEnd, duration)
 	}
 	return true
 }

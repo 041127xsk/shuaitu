@@ -389,6 +389,8 @@ const startReportPolling = (id: number) => {
             reportNum.value = resp.data.count
         }
     }).catch(() => {})
+    // 轮询间隔 1000ms → 3000ms：后端每次统计都要查库，1 秒一次太密集。
+    // 战报录入是秒级以上的过程，3 秒刷新肉眼几乎无感，后端负担降到三分之一。
     getReportNumTimer.value = setInterval(() => {
         GetReportNumByTaskId(id).then(v => {
             const resp = JSON.parse(v)
@@ -397,7 +399,7 @@ const startReportPolling = (id: number) => {
             }
         })
         refreshCaptureMode()
-    }, 1000)
+    }, 3000)
 }
 
 const openReportModal = (id: number, pos: number) => {
@@ -576,13 +578,14 @@ const exportSummaryExcel = async () => {
     XLSX.writeFile(wb, '攻城考勤总览.xlsx')
 }
 
+// 补齐列宽：开启虚拟滚动后 Naive UI 需要每列都有固定宽度才能计算行高与滚动范围
 const detailColumns: any[] = [
-    { title: '名称', key: 'name', sorter: 'default', defaultSortOrder: false },
-    { title: '分组', key: 'group', sorter: 'default', defaultSortOrder: false },
-    { title: '主力', key: 'atk_team_num', sorter: (a: any, b: any) => a.atk_team_num - b.atk_team_num, defaultSortOrder: false },
-    { title: '拆迁', key: 'dis_team_num', sorter: (a: any, b: any) => a.dis_team_num - b.dis_team_num, defaultSortOrder: false },
-    { title: '主力次数', key: 'atk_num', sorter: (a: any, b: any) => a.atk_num - b.atk_num, defaultSortOrder: 'descend' },
-    { title: '拆迁次数', key: 'dis_num', sorter: (a: any, b: any) => a.dis_num - b.dis_num, defaultSortOrder: false },
+    { title: '名称', key: 'name', width: 110, sorter: 'default', defaultSortOrder: false },
+    { title: '分组', key: 'group', width: 90, sorter: 'default', defaultSortOrder: false },
+    { title: '主力', key: 'atk_team_num', width: 80, sorter: (a: any, b: any) => a.atk_team_num - b.atk_team_num, defaultSortOrder: false },
+    { title: '拆迁', key: 'dis_team_num', width: 80, sorter: (a: any, b: any) => a.dis_team_num - b.dis_team_num, defaultSortOrder: false },
+    { title: '主力次数', key: 'atk_num', width: 100, sorter: (a: any, b: any) => a.atk_num - b.atk_num, defaultSortOrder: 'descend' },
+    { title: '拆迁次数', key: 'dis_num', width: 100, sorter: (a: any, b: any) => a.dis_num - b.dis_num, defaultSortOrder: false },
     { title: '未到', key: 'absent', width: 80, render: (row: any) => h('span', row.atk_num === 0 && row.dis_num === 0 ? '未到' : ''), sorter: (a: any, b: any) => (a.atk_num === 0 && a.dis_num === 0 ? 1 : 0) - (b.atk_num === 0 && b.dis_num === 0 ? 1 : 0) },
 ]
 
@@ -803,7 +806,7 @@ onUnmounted(() => {
                 <div class="group-summary-title">按团汇总</div>
                 <n-data-table :columns="groupSummaryColumns" :data="groupSummaryData" :bordered="true" :single-line="false" size="small" :max-height="300" style="margin-bottom: 16px;" />
             </div>
-            <n-data-table :columns="detailColumns" :data="detailData" :bordered="true" :single-line="false" :max-height="500" />
+            <n-data-table :columns="detailColumns" :data="detailData" :bordered="true" :single-line="false" :max-height="500" virtual-scroll />
         </div>
     </n-modal>
 
@@ -829,6 +832,7 @@ onUnmounted(() => {
                 :single-line="false"
                 :scroll-x="Math.max(1200, 580 + (attendanceSummary.tasks?.length || 0) * 150)"
                 :max-height="560"
+                virtual-scroll
             />
         </div>
     </n-modal>

@@ -269,10 +269,16 @@ func conflictsWithKeptPlayerTeam(row playerTeam, kept []playerTeam) bool {
 }
 
 func sharedHeroCount(a, b playerTeam) int {
-	aHeroes := map[int]struct{}{a.Hero1ID: {}, a.Hero2ID: {}, a.Hero3ID: {}}
+	// 只有 3 个武将，改用栈上数组：原实现每次调用都在堆上分配 1 个 map + 1 个 slice，
+	// 一次全量比对要分配上百万次。语义与原来完全一致（仍遍历 b、仍跳过 id==0）。
+	aHeroes := [3]int{a.Hero1ID, a.Hero2ID, a.Hero3ID}
+	bHeroes := [3]int{b.Hero1ID, b.Hero2ID, b.Hero3ID}
 	count := 0
-	for _, id := range []int{b.Hero1ID, b.Hero2ID, b.Hero3ID} {
-		if _, ok := aHeroes[id]; ok && id != 0 {
+	for _, id := range bHeroes {
+		if id == 0 {
+			continue
+		}
+		if id == aHeroes[0] || id == aHeroes[1] || id == aHeroes[2] {
 			count++
 		}
 	}
