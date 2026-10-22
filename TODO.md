@@ -2,6 +2,16 @@
 
 ## P0 必做
 
+## ~~P0-0 stzb-helper-v2 修复 go vet 报错（Buffer 游标接口冲突）~~ ✅ 已完成 (2026-10-17)
+- `npacp.go`：`Buffer.ReadByte() byte` 与 `io.ByteReader` 要求的 `ReadByte() (byte, error)` 签名冲突，`go vet ./...` 报
+  `method ReadByte() byte should have signature ReadByte() (byte, error)`。
+- 该方法在全仓库**没有任何调用点**（死代码），且游标无法上报 EOF，因此**重命名为 `NextByte()`** 而不是改签名——
+  改签名会让“越界返回 0”和“真的读到 0x00”无法区分。
+- 新增 `Remaining() int`，让调用方能显式判断剩余长度。
+- 顺带删除 `Buffer.pos` 字段（同样从未被使用）。
+- 新增 `buffer_cursor_test.go`：5 个测试，覆盖「不得实现 io.ByteReader」、游标推进、越界返回 0、`ReadInt`+`ResetOffset`、空缓冲安全性。
+- 验证：`go vet ./...` 干净、`go build ./...` 通过、`go test ./...` 全绿（4.7s）。
+
 ## ~~P0-1 建立 SQLite 持久化层~~ ✅ 已完成 (2026-04-25)
 - `src/database.py`：三张表（heroes / primary_skills / crawl_state）、upsert、查询函数。
 - `scripts/load_to_sqlite.py`：幂等导入脚本，支持 `--report` 统计模式。

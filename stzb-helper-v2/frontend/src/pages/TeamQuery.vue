@@ -262,6 +262,38 @@ const resultType = (label) => {
 }
 
 const exporting = ref(false)
+
+// 中文按拼音排序的比较器。默认的 Array.sort() 按 UTF-16 码点排，
+// 对中文是乱序（如「张三」会排到「李四」后面），必须用 Intl.Collator。
+const nameCollator = new Intl.Collator('zh-Hans-CN', { numeric: true, sensitivity: 'base' })
+
+// 按内容计算列宽。单元格里用 \n 分行（武将信息是「红度\n等级\n名字-国家-兵种」），
+// 所以取最长的那一行来算宽度，而不是整段字符串长度。
+const computeColWidths = (header, rows, { min = 8, max = 40 } = {}) => {
+    const measure = (val) => {
+        if (val === null || val === undefined) return 0
+        const text = String(val)
+        return Math.max(...text.split('\n').map(line => {
+            // 中文字符实际显示宽度约为英文的 2 倍，按 2 计权重
+            let w = 0
+            for (const ch of line) {
+                w += /[\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef]/.test(ch) ? 2 : 1
+            }
+            return w
+        }))
+    }
+    return header.map((h, colIdx) => {
+        let widest = measure(h)
+        for (const row of rows) {
+            const w = measure(row[colIdx])
+            if (w > widest) widest = w
+        }
+        // +2 留出内边距，再夹到 [min, max]
+        const wch = Math.min(max, Math.max(min, widest + 2))
+        return { wch }
+    })
+}
+
 const doExport = async () => {
     exporting.value = true
 
@@ -321,25 +353,19 @@ const doExport = async () => {
                 skill1Info, skill2Info, skill3Info, gear1Info, gear2Info, gear3Info, role, time]
         })
 
+        // 按玩家名字拼音升序排序。同名玩家再按记录时间倒序，让最新的记录排在前面。
+        rows.sort((a, b) => {
+            const byName = nameCollator.compare(a[0] || '', b[0] || '')
+            if (byName !== 0) return byName
+            // 记录时间是最后一列，格式化为字符串后可直接比较；空值排最后
+            return (b[12] || '').localeCompare(a[12] || '')
+        })
+
         // 创建xlsx
         const ws = XLSX.utils.aoa_to_sheet([header, ...rows])
 
-        // 设置列宽
-        ws['!cols'] = [
-            { wch: 14 }, // 名字
-            { wch: 8 },  // 阵容红度
-            { wch: 18 }, // 大营武将
-            { wch: 18 }, // 中军武将
-            { wch: 18 }, // 前锋武将
-            { wch: 22 }, // 大营技能
-            { wch: 22 }, // 中军技能
-            { wch: 22 }, // 前锋技能
-            { wch: 16 }, // 大营宝物
-            { wch: 16 }, // 中军宝物
-            { wch: 16 }, // 前锋宝物
-            { wch: 12 }, // 记录类型
-            { wch: 18 }, // 记录时间
-        ]
+        // 列宽自适应：按表头与每列实际内容（含多行单元格的最长行）计算
+        ws['!cols'] = computeColWidths(header, rows)
 
         const wb = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(wb, ws, '队伍数据')
@@ -471,33 +497,31 @@ const unknownNameItems = computed(() => {
     return items
 })
 
+// 解析宝物信息，返回 [大营宝物, 中军宝物, 前锋宝物]（无宝物为 null）
+//
+// 数据格式：每组为 "宝物ID,强化等级,特技ID"，共 4 组。
+// 实测规律（全库统计）：
+//   进攻方记录：第 1 组恒为空(0/200)，有效宝物在 组2/组3/组4  → 偏移 1
+//   防守方记录：第 4 组恒为空(0/172)，有效宝物在 组1/组2/组3  → 偏移 0
+// 因此按 role 取对应偏移的连续 3 组，顺序即 大营→中军→前锋。
+// 注意：第 3 个字段是「特技ID」（如 30503/50301），不是武将位置索引，
+// 旧实现误当作 heroIndex 解析导致宝物错位并丢弃前锋宝物。
 const parseGearInfo = (gearStr, role) => {
     if (!gearStr) return [null, null, null]
     const slots = String(gearStr).split(';').filter(s => s.trim() !== '')
-    let parsed = []
-    for (let i = 0; i < slots.length; i++) {
-        const parts = slots[i].split(',')
-        if (parts.length !== 3) continue
+    const offset = role === 'defend' ? 0 : 1
+    return [0, 1, 2].map(k => {
+        const slot = slots[offset + k]
+        if (!slot) return null
+        const parts = slot.split(',')
+        if (parts.length !== 3) return null
         const gearId = parseInt(parts[0])
+        if (!gearId) return null
         const level = parseInt(parts[1])
-        const rawHeroIndex = parseInt(parts[2])
-        const heroIndex = rawHeroIndex >= 1 && rawHeroIndex <= 6
-            ? rawHeroIndex
-            : (role === 'defend' ? i + 4 : i + 1)
-        if (gearId === 0) {
-            parsed.push({ heroIndex, gear: null })
-        } else {
-            const mapped = getMappedName(mappingIndex.value, 'gear', gearId)
-            const gear = gearMap[gearId]
-            parsed.push({ heroIndex, gear: { id: gearId, name: mapped || (gear ? gear.name : `ID:${gearId}`), level } })
-        }
-    }
-    if (role === 'defend') {
-        parsed = parsed.filter(g => g.heroIndex >= 4).reverse()
-    } else {
-        parsed = parsed.filter(g => g.heroIndex <= 3)
-    }
-    return [0, 1, 2].map(i => parsed[i]?.gear || null)
+        const mapped = getMappedName(mappingIndex.value, 'gear', gearId)
+        const gear = gearMap[gearId]
+        return { id: gearId, name: mapped || (gear ? gear.name : `ID:${gearId}`), level }
+    })
 }
 
 const getGearDisplay = (gearStr, role, index) => {

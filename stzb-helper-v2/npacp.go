@@ -61,6 +61,66 @@ func runNpcap() {
 	}
 }
 
+// captureDeviceBlacklist 不可能承载游戏流量的接口关键词。
+// 实测本机 Npcap 枚举到 17 个设备，其中 15 个是 WAN Miniport(8) / Wi-Fi Direct(2) /
+// 蓝牙 / Teredo / 6to4 / IP-HTTPS / 内核调试器 这类伪接口与隧道接口。
+// 原实现对每个设备都调用 pcap.OpenLive 混杂模式 + BlockForever 永久阻塞读取，
+// 等于白养十几个线程持续消耗 CPU，而游戏流量(tcp src port 8001)只可能走真实网卡。
+var captureDeviceBlacklist = []string{
+	"wan miniport", "pptp", "l2tp", "sstp", "ikev2", "pppoe",
+	"wi-fi direct", "wifidirect", "bluetooth", "蓝牙",
+	"teredo", "6to4", "ip-https", "isatap", "隧道", "tunnel",
+	"kernel debug", "kerneldebug", "内核调试",
+	"network monitor", "loopback", "回环",
+}
+
+// hasUsableIPv4 判断接口是否配置了可用的 IPv4 单播地址（排除回环与链路本地地址）。
+// 伪接口即使不在黑名单里，通常也只有 IPv6 链路本地地址或根本没有地址。
+func hasUsableIPv4(dev pcap.Interface) bool {
+	for _, addr := range dev.Addresses {
+		if addr.IP == nil {
+			continue
+		}
+		v4 := addr.IP.To4()
+		if v4 == nil {
+			continue
+		}
+		if v4[0] == 127 { // 回环
+			continue
+		}
+		if v4[0] == 169 && v4[1] == 254 { // 链路本地 169.254.x.x
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+// isCaptureCandidate 判断接口是否值得开启抓包：不在黑名单里，且配置了可用的 IPv4 地址。
+func isCaptureCandidate(dev pcap.Interface) bool {
+	desc := strings.ToLower(dev.Name + " " + dev.Description)
+	for _, kw := range captureDeviceBlacklist {
+		if strings.Contains(desc, kw) {
+			return false
+		}
+	}
+	return hasUsableIPv4(dev)
+}
+
+// filterCaptureDevices 过滤出真正需要抓包的接口，返回候选列表与被跳过的接口名。
+func filterCaptureDevices(devices []pcap.Interface) ([]pcap.Interface, []string) {
+	candidates := make([]pcap.Interface, 0, len(devices))
+	skipped := make([]string, 0)
+	for _, dev := range devices {
+		if isCaptureCandidate(dev) {
+			candidates = append(candidates, dev)
+		} else {
+			skipped = append(skipped, dev.Name)
+		}
+	}
+	return candidates, skipped
+}
+
 func runNpcapWithDeps(
 	findAllDevs func() ([]pcap.Interface, error),
 	startCapture func(string, *sync.WaitGroup),
@@ -82,6 +142,20 @@ func runNpcapWithDeps(
 		}
 	}
 
+	// 只对真正可能承载游戏流量的接口开启抓包，避免为十几个伪接口白养线程
+	candidates, skipped := filterCaptureDevices(devices)
+	if len(candidates) == 0 && len(devices) > 0 {
+		// 筛选误杀兜底：宁可多开几个线程，也绝不能抓不到包
+		log.Printf("接口筛选后为空，保守回退：启用全部 %d 个接口", len(devices))
+		candidates = devices
+	}
+	log.Printf("网络接口筛选: 共 %d 个，启用 %d 个，跳过 %d 个（隧道/伪接口/无 IPv4）",
+		len(devices), len(candidates), len(skipped))
+	// 始终记录实际启用的接口：一旦筛选误杀导致抓不到战报，日志里一眼可查
+	for _, device := range candidates {
+		log.Printf("  启用抓包接口: %s (%s)", device.Name, device.Description)
+	}
+
 	var wg sync.WaitGroup
 
 	log.Println("stzbHelper开始运行!")
@@ -91,7 +165,7 @@ func runNpcapWithDeps(
 		beforeCapture()
 	}
 
-	for _, device := range devices {
+	for _, device := range candidates {
 		wg.Add(1)
 		startCapture(device.Name, &wg)
 	}
@@ -381,7 +455,6 @@ func handlePacket(packet gopacket.Packet, st *captureState) {
 
 type Buffer struct {
 	Byte   []byte
-	pos    int
 	offset int
 }
 
@@ -402,7 +475,12 @@ func (bb *Buffer) ReadInt() int {
 	return int(value)
 }
 
-func (bb *Buffer) ReadByte() byte {
+// NextByte reads one byte and advances the offset.
+//
+// It is deliberately NOT named ReadByte: a method named ReadByte would have to
+// match io.ByteReader's `ReadByte() (byte, error)`, and this cursor cannot
+// report EOF (it returns 0 on overrun).
+func (bb *Buffer) NextByte() byte {
 	if bb.offset+1 > len(bb.Byte) {
 		return 0
 	}
