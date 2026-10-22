@@ -11,9 +11,13 @@ export function CheckUpdate():Promise<string>;
 
 export function CreateDb(arg1:string):Promise<string>;
 
+export function CreateManualPlayerTeam(arg1:string):Promise<string>;
+
 export function CreateTask(arg1:string,arg2:number,arg3:Array<string>,arg4:Array<string>,arg5:number,arg6:number):Promise<string>;
 
 export function DeleteDb(arg1:string):Promise<string>;
+
+export function DeleteManualPlayerTeam(arg1:number):Promise<string>;
 
 export function DeleteNameMapping(arg1:string,arg2:number):Promise<string>;
 
@@ -51,6 +55,8 @@ export function GetGroupWu():Promise<string>;
 
 export function GetHiddenPlayerTeams(arg1:number,arg2:number):Promise<string>;
 
+export function GetHiddenPlayerTeamsBySource():Promise<string>;
+
 export function GetLogs():Promise<string>;
 
 export function GetMaterializedStatsStatus():Promise<string>;
@@ -83,6 +89,8 @@ export function Greet(arg1:string):Promise<string>;
 
 export function HidePlayerTeam(arg1:string,arg2:string,arg3:string,arg4:number,arg5:number,arg6:number,arg7:string):Promise<string>;
 
+export function HidePlayerTeamRecord(arg1:string,arg2:number,arg3:string):Promise<string>;
+
 export function LoadConfig():Promise<string>;
 
 export function RebuildMaterializedStats():Promise<string>;
@@ -90,6 +98,8 @@ export function RebuildMaterializedStats():Promise<string>;
 export function RenameDb(arg1:string,arg2:string):Promise<string>;
 
 export function RestoreHiddenPlayerTeam(arg1:number):Promise<string>;
+
+export function RestoreHiddenPlayerTeamRecord(arg1:string,arg2:number,arg3:string):Promise<string>;
 
 export function SaveAdbProfiles(arg1:string):Promise<string>;
 
@@ -108,6 +118,8 @@ export function StartAutoScroll(arg1:string):Promise<string>;
 export function StatisticsReport(arg1:number):Promise<string>;
 
 export function StopAutoScroll():Promise<string>;
+
+export function UpdateManualPlayerTeam(arg1:number,arg2:string):Promise<string>;
 
 export function UpdateTask(arg1:number,arg2:string,arg3:number,arg4:Array<string>,arg5:Array<string>,arg6:number,arg7:number):Promise<string>;
 

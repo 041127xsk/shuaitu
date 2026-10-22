@@ -22,12 +22,20 @@ export function CreateDb(arg1) {
   return window['go']['main']['App']['CreateDb'](arg1);
 }
 
+export function CreateManualPlayerTeam(arg1) {
+  return window['go']['main']['App']['CreateManualPlayerTeam'](arg1);
+}
+
 export function CreateTask(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['main']['App']['CreateTask'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 export function DeleteDb(arg1) {
   return window['go']['main']['App']['DeleteDb'](arg1);
+}
+
+export function DeleteManualPlayerTeam(arg1) {
+  return window['go']['main']['App']['DeleteManualPlayerTeam'](arg1);
 }
 
 export function DeleteNameMapping(arg1, arg2) {
@@ -102,6 +110,10 @@ export function GetHiddenPlayerTeams(arg1, arg2) {
   return window['go']['main']['App']['GetHiddenPlayerTeams'](arg1, arg2);
 }
 
+export function GetHiddenPlayerTeamsBySource() {
+  return window['go']['main']['App']['GetHiddenPlayerTeamsBySource']();
+}
+
 export function GetLogs() {
   return window['go']['main']['App']['GetLogs']();
 }
@@ -166,6 +178,10 @@ export function HidePlayerTeam(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['HidePlayerTeam'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
+export function HidePlayerTeamRecord(arg1, arg2, arg3) {
+  return window['go']['main']['App']['HidePlayerTeamRecord'](arg1, arg2, arg3);
+}
+
 export function LoadConfig() {
   return window['go']['main']['App']['LoadConfig']();
 }
@@ -180,6 +196,10 @@ export function RenameDb(arg1, arg2) {
 
 export function RestoreHiddenPlayerTeam(arg1) {
   return window['go']['main']['App']['RestoreHiddenPlayerTeam'](arg1);
+}
+
+export function RestoreHiddenPlayerTeamRecord(arg1, arg2, arg3) {
+  return window['go']['main']['App']['RestoreHiddenPlayerTeamRecord'](arg1, arg2, arg3);
 }
 
 export function SaveAdbProfiles(arg1) {
@@ -216,6 +236,10 @@ export function StatisticsReport(arg1) {
 
 export function StopAutoScroll() {
   return window['go']['main']['App']['StopAutoScroll']();
+}
+
+export function UpdateManualPlayerTeam(arg1, arg2) {
+  return window['go']['main']['App']['UpdateManualPlayerTeam'](arg1, arg2);
 }
 
 export function UpdateTask(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
