@@ -388,7 +388,7 @@ func (a *App) ExportPlayerTeam(name string, uname string, idu string) string {
 			) AS rn
 		FROM battle_report
 		WHERE attack_hero1_id != 0 AND attack_hero2_id != 0 AND attack_hero3_id != 0
-			AND attack_hero1_level >= 15 AND attack_hero2_level >= 15 AND attack_hero3_level >= 15
+			AND attack_hero1_level > 30 AND attack_hero2_level > 30 AND attack_hero3_level > 30
 			AND attack_hp >= 10000
 			AND attack_name LIKE ? AND attack_union_name LIKE ? AND attack_idu LIKE ?
 			AND npc = 0 AND all_skill_info != "" AND all_skill_info IS NOT NULL
@@ -418,7 +418,7 @@ func (a *App) ExportPlayerTeam(name string, uname string, idu string) string {
 			) AS rn
 		FROM battle_report
 		WHERE defend_hero1_id != 0 AND defend_hero2_id != 0 AND defend_hero3_id != 0
-			AND defend_hero1_level >= 15 AND defend_hero2_level >= 15 AND defend_hero3_level >= 15
+			AND defend_hero1_level > 30 AND defend_hero2_level > 30 AND defend_hero3_level > 30
 			AND defend_hp >= 10000
 			AND defend_name LIKE ? AND defend_union_name LIKE ? AND defend_idu LIKE ?
 			AND npc = 0 AND all_skill_info != "" AND all_skill_info IS NOT NULL
@@ -2209,6 +2209,9 @@ func (a *App) GetTeamWinRate(name string, uname string, idu string, page int, pa
 	if pageSize < 1 || pageSize > 200 {
 		pageSize = 50
 	}
+	// 队伍等级门槛统一抬到 MinTeamHeroLevel（> 30），与队伍查询/导出口径保持一致，
+	// 避免前端传入更低阈值时把练级队伍混进胜率统计。
+	minLevel = effectiveMinTeamHeroLevel(minLevel)
 
 	if data, used, err := queryMaterializedWinRateStats("player", name, uname, idu, page, pageSize, minLevel, minHp); used {
 		if err != nil {
@@ -2408,6 +2411,8 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 	if pageSize < 1 || pageSize > 200 {
 		pageSize = 50
 	}
+	// 与队伍查询/导出统一口径：等级阈值不低于 MinTeamHeroLevel（> 30）
+	minLevel = effectiveMinTeamHeroLevel(minLevel)
 
 	if data, used, err := queryMaterializedWinRateStats("team", name, uname, idu, page, pageSize, minLevel, minHp); used {
 		if err != nil {
