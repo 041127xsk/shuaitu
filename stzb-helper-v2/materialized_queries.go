@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"stzbHelper/model"
+	"sync"
 	"time"
 
 	"gorm.io/gorm"
@@ -157,6 +159,10 @@ func queryMaterializedWinRateStats(mode, name, uname, idu string, page, pageSize
 		return nil, true, err
 	}
 
+	// 补战损比。派生表里没有战损字段（无法用 SQL 从 all_hero_info 文本算出来），
+	// 这里在返回前实时填充。查询失败不影响主流程，战损比留 0（前端显示 —）。
+	attachLossRatioToStats(rows, mode)
+
 	return map[string]interface{}{
 		"list":      rows,
 		"total":     total,
@@ -166,6 +172,142 @@ func queryMaterializedWinRateStats(mode, name, uname, idu string, page, pageSize
 		"cache_hit": false,
 		"source":    "materialized",
 	}, true, nil
+}
+
+// attachLossRatioToStats 给派生表查询结果补上战损比与损耗率。
+//
+// mode = "player"：派生表行是「某个玩家 + 某个阵容」，按 玩家+阵容 精确匹配。
+// mode = "team"  ：派生表行是「某个阵容」（跨玩家聚合），按阵容累加所有玩家。
+//
+// 早先两种模式都只按三武将匹配，导致 player 模式下分子分母跨了全部玩家：
+// 战损取自全库 786 场、页面这一行只代表 10 场，且攻守两侧重复计入，
+// 实测 646 支队伍里 609 支损耗率超过 100%（最高 287%）。
+func attachLossRatioToStats(rows []model.TeamWinRateStat, mode string) {
+	if len(rows) == 0 {
+		return
+	}
+
+	stats, err := cachedTeamLossStats()
+	if err != nil {
+		log.Printf("战损统计查询失败（派生表 mode=%s），战损比留空: %v", mode, err)
+		return
+	}
+	for i := range rows {
+		var ls *teamLossStat
+		if mode == "team" {
+			ls = aggregateLossByLineup(stats, rows[i].Hero1ID, rows[i].Hero2ID, rows[i].Hero3ID)
+		} else if v, ok := stats[teamLossKey(rows[i].PlayerName, rows[i].Hero1ID, rows[i].Hero2ID, rows[i].Hero3ID)]; ok {
+			ls = v
+		}
+		if ls == nil || ls.Battles == 0 {
+			continue
+		}
+		rows[i].OurLostHp = ls.OurLost
+		rows[i].EnemyLostHp = ls.EnemyLost
+		rows[i].OurWoundedHp = ls.OurWounded
+		rows[i].EnemyWoundedHp = ls.EnemyWounded
+		rows[i].OurKilledHp = ls.OurKilled
+		rows[i].EnemyKilledHp = ls.EnemyKilled
+		rows[i].LossRatioBattles = ls.Battles
+		rows[i].LossRatio = computeLossRatio(ls.OurLost, ls.EnemyLost)
+		rows[i].LossRate = computeDestroyedRate(ls.OurLost, ls.OurTotalHp)
+	}
+}
+
+// aggregateLossByLineup 按阵容（三武将）跨玩家累加战损。
+// 用于「按队伍组合」视图：该视图把同一阵容的所有玩家合成一行。
+func aggregateLossByLineup(stats map[string]*teamLossStat, h1, h2, h3 int64) *teamLossStat {
+	if len(stats) == 0 {
+		return nil
+	}
+	var out *teamLossStat
+	for _, ls := range stats {
+		if ls.Hero1ID != h1 || ls.Hero2ID != h2 || ls.Hero3ID != h3 {
+			continue
+		}
+		if out == nil {
+			out = &teamLossStat{Hero1ID: h1, Hero2ID: h2, Hero3ID: h3}
+		}
+		out.OurLost += ls.OurLost
+		out.EnemyLost += ls.EnemyLost
+		out.OurWounded += ls.OurWounded
+		out.EnemyWounded += ls.EnemyWounded
+		out.OurKilled += ls.OurKilled
+		out.EnemyKilled += ls.EnemyKilled
+		out.OurTotalHp += ls.OurTotalHp
+		out.EnemyTotalHp += ls.EnemyTotalHp
+		out.Battles += ls.Battles
+	}
+	return out
+}
+
+// 战损统计的短时缓存。
+//
+// 战损需要扫描全表并逐条解析 all_hero_info 文本（约 200-400ms），
+// 而胜率页每次翻页都会调用，不做缓存会明显拖慢翻页。
+// 只有「按玩家」「按队伍」两种口径，用两个槽位即可；新增战报时统一失效。
+const lossStatsCacheTTL = 20 * time.Second
+
+var (
+	lossStatsCacheMu    sync.Mutex
+	lossPlayerCacheAt   time.Time
+	lossPlayerCacheData map[string]*playerLossStat
+	lossTeamCacheAt     time.Time
+	lossTeamCacheData   map[string]*teamLossStat
+)
+
+// invalidateLossStatsCache 清空战损缓存（新增/切换数据库时调用）。
+func invalidateLossStatsCache() {
+	lossStatsCacheMu.Lock()
+	lossPlayerCacheData = nil
+	lossTeamCacheData = nil
+	lossStatsCacheMu.Unlock()
+}
+
+func cachedPlayerLossStats() (map[string]*playerLossStat, error) {
+	level := effectiveMinTeamHeroLevel(defaultWinRateMinLevel)
+
+	lossStatsCacheMu.Lock()
+	if lossPlayerCacheData != nil && time.Since(lossPlayerCacheAt) < lossStatsCacheTTL {
+		data := lossPlayerCacheData
+		lossStatsCacheMu.Unlock()
+		return data, nil
+	}
+	lossStatsCacheMu.Unlock()
+
+	data, err := queryPlayerLossStats(level)
+	if err != nil {
+		return nil, err
+	}
+
+	lossStatsCacheMu.Lock()
+	lossPlayerCacheData = data
+	lossPlayerCacheAt = time.Now()
+	lossStatsCacheMu.Unlock()
+	return data, nil
+}
+
+func cachedTeamLossStats() (map[string]*teamLossStat, error) {
+	level := effectiveMinTeamHeroLevel(defaultWinRateMinLevel)
+
+	lossStatsCacheMu.Lock()
+	if lossTeamCacheData != nil && time.Since(lossTeamCacheAt) < lossStatsCacheTTL {
+		data := lossTeamCacheData
+		lossStatsCacheMu.Unlock()
+		return data, nil
+	}
+	lossStatsCacheMu.Unlock()
+
+	data, err := queryTeamLossStats(level)
+	if err != nil {
+		return nil, err
+	}
+
+	lossStatsCacheMu.Lock()
+	lossTeamCacheData = data
+	lossTeamCacheAt = time.Now()
+	lossStatsCacheMu.Unlock()
+	return data, nil
 }
 
 func applyWinRateStatFilters(query *gorm.DB, mode, name, uname, idu string) *gorm.DB {

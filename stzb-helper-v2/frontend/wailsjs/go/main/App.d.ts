@@ -93,6 +93,8 @@ export function HidePlayerTeamRecord(arg1:string,arg2:number,arg3:string):Promis
 
 export function LoadConfig():Promise<string>;
 
+export function QuitApp():Promise<void>;
+
 export function RebuildMaterializedStats():Promise<string>;
 
 export function RenameDb(arg1:string,arg2:string):Promise<string>;

@@ -196,12 +196,16 @@ const toggleRelatedBattles = async (team) => {
     }
     relatedBattles.value[key] = { loading: true, expanded: true, fetched: false, list: current?.list || [], total: current?.total || 0 }
     try {
-        const resp = JSON.parse(await GetPlayerTeamRelatedBattles(team.player_name, team.role, team.idu || '', team.hero1_id, team.hero2_id, team.hero3_id, 1, 20))
+        // 后端已做 idu 漂移回退（先按 idu 精确匹配，查空自动放宽到阵容 + 玩家名）。
+        const resp = JSON.parse(await GetPlayerTeamRelatedBattles(team.player_name, team.role, team.idu || '', team.hero1_id, team.hero2_id, team.hero3_id, 1, 100))
         if (resp.code === 200) {
             relatedBattles.value[key] = { loading: false, expanded: true, fetched: true, list: resp.data.list || [], total: resp.data.total || 0 }
+            if (!(resp.data.list || []).length) {
+                nmessage.warning('这支队伍暂无战报')
+            }
         } else {
             relatedBattles.value[key] = { loading: false, expanded: false, fetched: false, list: [], total: 0 }
-            nmessage.error(resp.msg)
+            nmessage.error(resp.msg || '战报查询失败')
         }
     } catch (e) {
         relatedBattles.value[key] = { loading: false, expanded: false, fetched: false, list: [], total: 0 }
@@ -757,15 +761,18 @@ onUnmounted(stopStatsPolling)
                                 </td>
                             </tr>
                             <tr v-if="relatedBattles[teamKey(team)]?.expanded || relatedBattles[teamKey(team)]?.loading">
-                                <td colspan="6">
+                                <td colspan="7">
                                     <div class="related-battles">
                                         <div v-if="relatedBattles[teamKey(team)]?.loading" class="related-loading">加载中...</div>
+                                        <div v-else-if="!(relatedBattles[teamKey(team)]?.list || []).length" class="related-loading">这支队伍暂无战报</div>
                                         <div v-else class="related-list">
                                             <div class="related-item" v-for="battle in relatedBattles[teamKey(team)]?.list || []" :key="battle.battle_id">
                                                 <n-tag size="tiny" :type="resultType(battle.result_label)" :bordered="false">{{ battle.result_label }}</n-tag>
                                                 <span>{{ formatTime(battle.time) }}</span>
                                                 <span>对手 {{ battle.opponent_name || '-' }}</span>
-                                                <span>{{ battle.attack_hp }} / {{ battle.defend_hp }}</span>
+                                                <span>战损(伤+死) 我 {{ battle.our_lost_hp }} : 敌 {{ battle.enemy_lost_hp }}</span>
+                                                <span v-if="battle.loss_ratio">战损比 {{ battle.loss_ratio.toFixed(2) }}</span>
+                                                <n-tag v-if="!battle.counted_in_loss_ratio" size="tiny" type="warning" :bordered="false" title="双方兵力未都超过 20000，不参与累计战损比">未计入</n-tag>
                                             </div>
                                         </div>
                                     </div>
@@ -824,12 +831,15 @@ onUnmounted(stopStatsPolling)
                             </div>
                             <div v-if="relatedBattles[teamKey(team)]?.expanded || relatedBattles[teamKey(team)]?.loading" class="related-battles">
                                 <div v-if="relatedBattles[teamKey(team)]?.loading" class="related-loading">加载中...</div>
+                                <div v-else-if="!(relatedBattles[teamKey(team)]?.list || []).length" class="related-loading">这支队伍暂无战报</div>
                                 <div v-else class="related-list">
                                     <div class="related-item" v-for="battle in relatedBattles[teamKey(team)]?.list || []" :key="battle.battle_id">
                                         <n-tag size="tiny" :type="resultType(battle.result_label)" :bordered="false">{{ battle.result_label }}</n-tag>
                                         <span>{{ formatTime(battle.time) }}</span>
                                         <span>对手 {{ battle.opponent_name || '-' }}</span>
-                                        <span>兵力 {{ battle.attack_hp }} / {{ battle.defend_hp }}</span>
+                                        <span>战损(伤+死) 我 {{ battle.our_lost_hp }} : 敌 {{ battle.enemy_lost_hp }}</span>
+                                        <span v-if="battle.loss_ratio">战损比 {{ battle.loss_ratio.toFixed(2) }}</span>
+                                        <n-tag v-if="!battle.counted_in_loss_ratio" size="tiny" type="warning" :bordered="false" title="双方兵力未都超过 20000，不参与累计战损比">未计入</n-tag>
                                     </div>
                                 </div>
                             </div>

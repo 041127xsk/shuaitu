@@ -221,6 +221,56 @@ func autoBindDatabaseFromBookData(data []byte, dstIP string, srcIP string) error
 	return nil
 }
 
+// 抓包句柄注册表：程序退出时需要主动关闭所有 handle，
+// 否则抓包 goroutine 会一直阻塞在 pcap.BlockForever 的读取上，
+// 导致 Quit() 之后进程无法干净退出（窗口关了、进程还在）。
+var (
+	captureHandlesMu sync.Mutex
+	captureHandles   = make(map[*pcap.Handle]struct{})
+	captureStopped   bool
+)
+
+func registerCaptureHandle(h *pcap.Handle) {
+	captureHandlesMu.Lock()
+	defer captureHandlesMu.Unlock()
+	if captureStopped {
+		// 已经进入退出流程，立即关闭，避免又挂起一个线程
+		h.Close()
+		return
+	}
+	captureHandles[h] = struct{}{}
+}
+
+func unregisterCaptureHandle(h *pcap.Handle) {
+	captureHandlesMu.Lock()
+	delete(captureHandles, h)
+	captureHandlesMu.Unlock()
+}
+
+// stopAllCapture 关闭所有抓包句柄，让阻塞中的读取立即返回。
+// 由 Wails 的 OnBeforeClose / OnShutdown 调用，幂等。
+func stopAllCapture() {
+	captureHandlesMu.Lock()
+	if captureStopped {
+		captureHandlesMu.Unlock()
+		return
+	}
+	captureStopped = true
+	handles := make([]*pcap.Handle, 0, len(captureHandles))
+	for h := range captureHandles {
+		handles = append(handles, h)
+	}
+	captureHandles = make(map[*pcap.Handle]struct{})
+	captureHandlesMu.Unlock()
+
+	for _, h := range handles {
+		h.Close()
+	}
+	if len(handles) > 0 {
+		log.Printf("退出前已关闭 %d 个抓包句柄", len(handles))
+	}
+}
+
 // captureTCPPackets 监听指定接口的 TCP 数据包
 func captureTCPPackets(deviceName string, wg *sync.WaitGroup) {
 	defer wg.Done()
@@ -235,6 +285,8 @@ func captureTCPPackets(deviceName string, wg *sync.WaitGroup) {
 		return
 	}
 	defer handle.Close()
+	registerCaptureHandle(handle)
+	defer unregisterCaptureHandle(handle)
 
 	// 设置过滤器，只捕获端口为 8001 的 TCP 数据包
 	filter := "tcp and src port 8001"
@@ -252,21 +304,31 @@ func captureTCPPackets(deviceName string, wg *sync.WaitGroup) {
 	}
 
 	// 定期输出抓包统计（每 60s），用于排查漏采
+	// 用 done 通道控制退出，否则程序关闭后这个 ticker goroutine 也会一直活着
+	done := make(chan struct{})
+	defer close(done)
 	go func() {
 		ticker := time.NewTicker(60 * time.Second)
 		defer ticker.Stop()
-		for range ticker.C {
-			st.bufMu.Lock()
-			log.Printf("[抓包统计] 接口 %s: 总包=%d 解析=%d 丢弃=%d 分包等待=%d 分包超时=%d 丢包检测=%d 丢包恢复=%d 当前缓冲=%dB",
-				deviceName, st.packetsTotal, st.packetsParse, st.packetsDrop,
-				st.bufWaits, st.bufTimeouts, st.lossDetected, st.lossResolved, len(st.fullbuf))
-			st.bufMu.Unlock()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				st.bufMu.Lock()
+				log.Printf("[抓包统计] 接口 %s: 总包=%d 解析=%d 丢弃=%d 分包等待=%d 分包超时=%d 丢包检测=%d 丢包恢复=%d 当前缓冲=%dB",
+					deviceName, st.packetsTotal, st.packetsParse, st.packetsDrop,
+					st.bufWaits, st.bufTimeouts, st.lossDetected, st.lossResolved, len(st.fullbuf))
+				st.bufMu.Unlock()
+			}
 		}
 	}()
 
+	// handle.Close() 被 stopAllCapture 调用后，Packets() 通道会关闭，循环自然结束
 	for packet := range packetSource.Packets() {
 		handlePacket(packet, &st)
 	}
+	log.Printf("抓包线程已退出: %s", deviceName)
 }
 
 func handlePacket(packet gopacket.Packet, st *captureState) {

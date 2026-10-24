@@ -53,6 +53,8 @@ func processBattleWrite(report model.BattleReport) {
 	}
 	invalidatePlayerTeamQueryCache()
 	invalidateQueryCache(&teamWinRateQueryCache)
+	// 新增战报后战损数据也变了，清掉战损缓存，下次查询重新统计
+	invalidateLossStatsCache()
 }
 
 // MinRecordAttackHeroLevel 是战报入库时进攻方三名武将必须达到的最低等级（含）。

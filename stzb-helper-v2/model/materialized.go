@@ -61,6 +61,20 @@ type TeamWinRateStat struct {
 	WinRate            float64 `json:"win_rate"`
 	LastTime           int64   `json:"last_time" gorm:"index:idx_twrs_time"`
 	LastBattleID       int64   `json:"last_battle_id" gorm:"column:last_battle_id"`
+
+	// 战损：不落库（gorm:"-"），查询后由 materialized_queries 侧实时填充。
+	// 原因：战损需要解析 all_hero_info 文本，无法在物化表重建时用 SQL 完成；
+	// 且战损口径依赖「双方兵力 > 20000」的运行时过滤，属于展示层派生数据。
+	// LostHp 只算死兵（永久损失）；伤兵 / 总损仅展示。
+	OurLostHp        int64   `json:"our_lost_hp" gorm:"-"`
+	EnemyLostHp      int64   `json:"enemy_lost_hp" gorm:"-"`
+	OurWoundedHp     int64   `json:"our_wounded_hp" gorm:"-"`
+	EnemyWoundedHp   int64   `json:"enemy_wounded_hp" gorm:"-"`
+	OurKilledHp      int64   `json:"our_killed_hp" gorm:"-"`
+	EnemyKilledHp    int64   `json:"enemy_killed_hp" gorm:"-"`
+	LossRatio        float64 `json:"loss_ratio" gorm:"-"`
+	LossRatioBattles int64   `json:"loss_ratio_battles" gorm:"-"`
+	LossRate         float64 `json:"destroyed_rate" gorm:"-"`
 }
 
 func (*TeamWinRateStat) TableName() string {

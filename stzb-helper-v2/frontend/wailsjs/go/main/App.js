@@ -186,6 +186,10 @@ export function LoadConfig() {
   return window['go']['main']['App']['LoadConfig']();
 }
 
+export function QuitApp() {
+  return window['go']['main']['App']['QuitApp']();
+}
+
 export function RebuildMaterializedStats() {
   return window['go']['main']['App']['RebuildMaterializedStats']();
 }

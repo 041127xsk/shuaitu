@@ -27,6 +27,23 @@ type App struct {
 	ctx context.Context
 }
 
+// QuitApp 供前端「关闭」按钮调用：先停抓包，再退出进程。
+//
+// 为什么不用前端 wailsjs 的 Quit()：那条路径依赖 window.runtime 注入，
+// 一旦注入失败点击会静默无反应（实测点 × 完全没动静，且 Go 端 OnBeforeClose
+// 也没触发）。改为直接调用 Go 端方法，走 Wails 的绑定通道，可靠得多。
+//
+// 先关抓包句柄再退出：抓包 goroutine 阻塞在 pcap.BlockForever 上，
+// 不先关掉的话进程可能残留。
+func (a *App) QuitApp() {
+	log.Printf("收到前端退出请求，正在关闭…")
+	stopAllCapture()
+	closeAdbShell()
+	// 给日志一点时间落盘
+	time.Sleep(100 * time.Millisecond)
+	os.Exit(0)
+}
+
 type AdbProfile struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
@@ -932,18 +949,18 @@ func (a *App) StartAutoScroll(jsonStr string) string {
 		//   自动调节每滑间隔——跟得上就逐渐加快，触发暂停就减慢，收敛到最快稳定速度。
 		// - 监测「连续多滑未新增战报」：说明可能滑到未加载区域或列表底部，
 		//   此时暂停等待加载（pauseWaitMs），避免漏采中部战报
-		noNewThreshold := 5               // 连续多少滑未新增战报则暂停等待
-		noNewCount := 0                   // 当前连续无新增计数
+		noNewThreshold := 5 // 连续多少滑未新增战报则暂停等待
+		noNewCount := 0     // 当前连续无新增计数
 		lastInserted := autoScrollInsertedCount
-		const pauseWaitMs = 800           // 暂停等待加载时长
-		const loadBreatheInterval = 20    // 深呼吸周期：每 20 滑额外等待一次
-		const loadBreatheExtraMs = 500    // 深呼吸额外时长（给游戏列表缓冲加载时间）
+		const pauseWaitMs = 800        // 暂停等待加载时长
+		const loadBreatheInterval = 20 // 深呼吸周期：每 20 滑额外等待一次
+		const loadBreatheExtraMs = 500 // 深呼吸额外时长（给游戏列表缓冲加载时间）
 		// 自适应间隔参数
-		adaptiveDelay := delay            // 初始用用户配置，之后自动调节
-		const delayMinMs = 30             // 间隔下限（过快游戏加载跟不上）
-		const delayMaxMs = 300            // 间隔上限
-		const delayStepDown = 20          // 触发暂停后间隔加大（变慢）
-		const delayStepUp = 50            // 每滑正常则间隔减小 50ms（快速加速）
+		adaptiveDelay := delay   // 初始用用户配置，之后自动调节
+		const delayMinMs = 30    // 间隔下限（过快游戏加载跟不上）
+		const delayMaxMs = 300   // 间隔上限
+		const delayStepDown = 20 // 触发暂停后间隔加大（变慢）
+		const delayStepUp = 50   // 每滑正常则间隔减小 50ms（快速加速）
 
 		// 启动持久 adb shell 会话
 		if !ensureAdbShell(adbPath, adbSerial) {
@@ -1783,6 +1800,7 @@ func (a *App) CreateDb(name string) string {
 	databaseSelected = true
 	invalidatePlayerTeamQueryCache()
 	invalidateQueryCache(&teamWinRateQueryCache)
+	invalidateLossStatsCache()
 	return global.Response{Message: "数据库创建成功"}.Success()
 }
 
@@ -1876,6 +1894,7 @@ func (a *App) SelectDb(name string) string {
 	databaseSelected = true
 	invalidatePlayerTeamQueryCache()
 	invalidateQueryCache(&teamWinRateQueryCache)
+	invalidateLossStatsCache()
 	log.Printf("数据库连接成功: %s", dbPath)
 	return global.Response{Message: "数据库连接成功"}.Success()
 }
@@ -1990,6 +2009,7 @@ func (a *App) RebuildMaterializedStats() string {
 	}
 	invalidatePlayerTeamQueryCache()
 	invalidateQueryCache(&teamWinRateQueryCache)
+	invalidateLossStatsCache()
 	return global.Response{Data: map[string]interface{}{
 		"started": true,
 	}, Message: "统计索引已开始后台重建"}.Success()
@@ -2201,6 +2221,21 @@ func (a *App) GetTeamWinRate(name string, uname string, idu string, page int, pa
 		Idu          string  `json:"idu"`
 		AllSkillInfo string  `json:"all_skill_info"`
 		Role         string  `json:"role"`
+
+		// 战损（按玩家口径）：该玩家所有队伍的累计战损。
+		// LostHp = 伤兵 + 死兵（当场战损，战损比与损耗率都用它）；
+		// WoundedHp / KilledHp / LossRate 供展示。只统计双方兵力都
+		// > MinLossRatioHpThreshold 的场次，先累加后相除。
+		OurLostHp        int64   `json:"our_lost_hp"`
+		EnemyLostHp      int64   `json:"enemy_lost_hp"`
+		OurWoundedHp     int64   `json:"our_wounded_hp"`
+		EnemyWoundedHp   int64   `json:"enemy_wounded_hp"`
+		OurKilledHp      int64   `json:"our_killed_hp"`
+		EnemyKilledHp    int64   `json:"enemy_killed_hp"`
+		LossRatio        float64 `json:"loss_ratio"`
+		LossRatioBattles int64   `json:"loss_ratio_battles"`
+		// LossRate 是损耗率 = 我方累计战损（伤+死）/ 我方累计开战兵力（历史累计口径）
+		LossRate float64 `json:"destroyed_rate"`
 	}
 
 	if page < 1 {
@@ -2367,6 +2402,31 @@ func (a *App) GetTeamWinRate(name string, uname string, idu string, page int, pa
 		winRateResults = append(winRateResults, r.TeamWinRate)
 	}
 
+	// 战损比：按「三武将组合」匹配，而不是按玩家名。
+	//
+	// 胜率页的每一行是「玩家 + 某个阵容」，同一玩家可能有多个不同阵容的多行。
+	// 早先按 PlayerName 匹配，导致同一玩家的所有阵容行拿到完全相同的战损比
+	// （实测三支不同队伍显示同一个值），属于错误口径。
+	// 查询失败不影响胜率主流程，仅战损比留空。
+	if lossByTeam, lossErr := cachedTeamLossStats(); lossErr != nil {
+		log.Printf("战损统计查询失败（按玩家视图），本次不返回战损比: %v", lossErr)
+	} else if lossByTeam != nil {
+		for i := range winRateResults {
+			key := teamLossKey(winRateResults[i].PlayerName, winRateResults[i].Hero1Id, winRateResults[i].Hero2Id, winRateResults[i].Hero3Id)
+			if ls, ok := lossByTeam[key]; ok && ls.Battles > 0 {
+				winRateResults[i].OurLostHp = ls.OurLost
+				winRateResults[i].EnemyLostHp = ls.EnemyLost
+				winRateResults[i].OurWoundedHp = ls.OurWounded
+				winRateResults[i].EnemyWoundedHp = ls.EnemyWounded
+				winRateResults[i].OurKilledHp = ls.OurKilled
+				winRateResults[i].EnemyKilledHp = ls.EnemyKilled
+				winRateResults[i].LossRatioBattles = ls.Battles
+				winRateResults[i].LossRatio = computeLossRatio(ls.OurLost, ls.EnemyLost)
+				winRateResults[i].LossRate = computeDestroyedRate(ls.OurLost, ls.OurTotalHp)
+			}
+		}
+	}
+
 	data := map[string]interface{}{
 		"list":      winRateResults,
 		"total":     total,
@@ -2403,6 +2463,20 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 		AllSkillInfo string  `json:"all_skill_info"`
 		Role         string  `json:"role"`
 		Players      string  `json:"players"`
+
+		// 战损相关：先按队伍累加双方战损，再相除得到战损比（> 1 为我方赚）。
+		// 单场小规模接触（完美克制时一方可能只带几十兵）会把比值极端放大，
+		// 因此只统计双方兵力都 > MinLossRatioHpThreshold 的场次，且先累加后相除。
+		// LostHp = 伤兵 + 死兵（当场被打掉的全部兵力）；KilledHp 是其中永久损失部分。
+		OurLostHp        int64   `json:"our_lost_hp"`        // 本队伍累计战损（伤+死）
+		EnemyLostHp      int64   `json:"enemy_lost_hp"`      // 对方累计战损（伤+死）
+		OurWoundedHp     int64   `json:"our_wounded_hp"`     // 本队伍累计伤兵
+		EnemyWoundedHp   int64   `json:"enemy_wounded_hp"`   // 对方累计伤兵
+		OurKilledHp      int64   `json:"our_killed_hp"`      // 本队伍累计死兵（永久损失）
+		EnemyKilledHp    int64   `json:"enemy_killed_hp"`    // 对方累计死兵
+		LossRatio        float64 `json:"loss_ratio"`         // = EnemyLostHp / OurLostHp，> 1 我方赚
+		LossRatioBattles int64   `json:"loss_ratio_battles"` // 参与战损统计的场次
+		LossRate         float64 `json:"destroyed_rate"`          // 损耗率 = 我方累计战损 / 我方累计开战兵力
 	}
 
 	if page < 1 {
@@ -2450,6 +2524,8 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 			time,
 			all_skill_info,
 			'attack' AS role,
+			attack_all_hero_info AS own_hero_info,
+			defend_all_hero_info AS enemy_hero_info,
 			CASE WHEN result = 0 THEN 1 ELSE 0 END AS loss,
 			CASE WHEN result IN (6,7,8,13) THEN 1 ELSE 0 END AS draw,
 			CASE WHEN result IN (1,2,3,4,10,18,19) THEN 1 ELSE 0 END AS win
@@ -2486,6 +2562,8 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 			time,
 			all_skill_info,
 			'defend' AS role,
+			defend_all_hero_info AS own_hero_info,
+			attack_all_hero_info AS enemy_hero_info,
 			CASE WHEN result IN (1,2,3,4,10,18,19) THEN 1 ELSE 0 END AS loss,
 			CASE WHEN result IN (6,7,8,13) THEN 1 ELSE 0 END AS draw,
 			CASE WHEN result = 0 THEN 1 ELSE 0 END AS win
@@ -2611,6 +2689,14 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 		}
 	}
 
+	// 战损统计：单独查询一次，按三武将 ID 累加双方战损。
+	// 只统计双方兵力都 > MinLossRatioHpThreshold 的场次（完美克制时一方可能只带
+	// 几十兵，比值会被极端放大）。查询失败不影响胜率主流程，仅战损比留空。
+	lossStats, lossErr := queryTeamLossStats(minLevel)
+	if lossErr != nil {
+		log.Printf("战损统计查询失败，本次不返回战损比: %v", lossErr)
+	}
+
 	// 转换为切片并计算胜率、玩家列表
 	var allResults []TeamWinRateByTeam
 	for _, v := range merged {
@@ -2627,6 +2713,22 @@ func (a *App) GetTeamWinRateByTeam(name string, uname string, idu string, page i
 		if v.TotalBattles > 0 {
 			v.WinRate = float64(int(float64(v.WinCount)/float64(v.TotalBattles)*1000)) / 10
 		}
+
+		// 战损：按队伍（三武将 ID）取累计数据，先累加后相除。
+		// 「按队伍」视图跨玩家聚合：同一阵容可能有几十个玩家用过，全部累加才是阵容整体表现。
+		// LostHp = 伤兵 + 死兵（当场被打掉的全部兵力）；KilledHp 是其中永久损失部分。
+		if ls := aggregateLossByLineup(lossStats, v.Hero1Id, v.Hero2Id, v.Hero3Id); ls != nil && ls.Battles > 0 {
+			v.OurLostHp = ls.OurLost
+			v.EnemyLostHp = ls.EnemyLost
+			v.OurWoundedHp = ls.OurWounded
+			v.EnemyWoundedHp = ls.EnemyWounded
+			v.OurKilledHp = ls.OurKilled
+			v.EnemyKilledHp = ls.EnemyKilled
+			v.LossRatioBattles = ls.Battles
+			v.LossRatio = computeLossRatio(ls.OurLost, ls.EnemyLost)
+			v.LossRate = computeDestroyedRate(ls.OurLost, ls.OurTotalHp)
+		}
+
 		allResults = append(allResults, v.TeamWinRateByTeam)
 	}
 

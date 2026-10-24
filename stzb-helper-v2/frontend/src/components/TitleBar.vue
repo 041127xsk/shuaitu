@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { WindowMinimise, WindowToggleMaximise, WindowIsMaximised, Quit } from '../../wailsjs/runtime/runtime'
+import { QuitApp } from '../../wailsjs/go/main/App'
 import { Swords, Minus, Square, X, Copy } from 'lucide-vue-next'
 import { useThemeStore } from '../stores/theme'
 
@@ -25,8 +26,23 @@ const handleToggleMaximise = () => {
     setTimeout(checkMaximised, 100)
 }
 
-const handleClose = () => {
-    Quit()
+// 关闭窗口。
+//
+// 优先调用 Go 端的 QuitApp()：走 Wails 绑定通道，不依赖 window.runtime 注入。
+// 原来的 Quit() 依赖 window.runtime，注入失败时点击会静默无反应。
+// 两条路都失败时最后再兜底试一次 Quit()。
+const handleClose = async () => {
+    try {
+        await QuitApp()
+        return
+    } catch (e) {
+        console.error('QuitApp 调用失败，回退到 runtime Quit():', e)
+    }
+    try {
+        Quit()
+    } catch (e) {
+        console.error('Quit() 也失败了，无法关闭程序:', e)
+    }
 }
 
 const handleDblClick = () => {

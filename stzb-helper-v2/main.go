@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"io"
 	"log"
@@ -48,6 +49,17 @@ func main() {
 		},
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 1},
 		OnStartup:        app.startup,
+		// 退出前主动关闭抓包句柄。抓包 goroutine 阻塞在 pcap.BlockForever 的读取上，
+		// 不主动关闭的话 Quit() 之后进程无法干净退出（窗口消失但进程残留）。
+		OnBeforeClose: func(ctx context.Context) bool {
+			log.Printf("收到关闭请求，正在停止抓包…")
+			stopAllCapture()
+			return false // 返回 false 表示允许关闭，不阻止退出
+		},
+		OnShutdown: func(ctx context.Context) {
+			// 兜底：即使 OnBeforeClose 没有覆盖到，也在退出时再关一次（stopAllCapture 幂等）
+			stopAllCapture()
+		},
 		Bind: []interface{}{
 			app,
 		},

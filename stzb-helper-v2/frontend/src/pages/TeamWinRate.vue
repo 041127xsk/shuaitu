@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, h, watch, onMounted, onUnmounted } from 'vue'
-import { NCard, NButton, NInput, NInputNumber, NEmpty, NSpin, NTag, NPagination, NDataTable, useMessage } from 'naive-ui'
-import { GetMaterializedStatsStatus, GetTeamWinRate, GetTeamWinRateByTeam, RebuildMaterializedStats } from '../../wailsjs/go/main/App'
-import { Search, Image, Users, RefreshCw } from 'lucide-vue-next'
+import { NCard, NButton, NInput, NInputNumber, NEmpty, NSpin, NTag, NPagination, NDataTable, NModal, useMessage } from 'naive-ui'
+import { GetMaterializedStatsStatus, GetPlayerTeamRelatedBattles, GetTeamWinRate, GetTeamWinRateByTeam, RebuildMaterializedStats } from '../../wailsjs/go/main/App'
+import { Search, Image, Users, RefreshCw, ScrollText } from 'lucide-vue-next'
 import { herocfg, skillcfg } from '../cfg'
 
 const heroMap = JSON.parse(herocfg)
@@ -31,6 +31,76 @@ const statsReady = ref(false)
 const rebuilding = ref(false)
 const rebuildProgressText = ref('')
 let statsPollTimer: number | undefined
+
+// 战报弹窗：和队伍查询一样按需展开原始战报，不额外占列宽。
+const battleModalVisible = ref(false)
+const battleModalTitle = ref('')
+const battleLoading = ref(false)
+const battleList = ref<any[]>([])
+const battleTotal = ref(0)
+const battleRow = ref<any>(null)
+// 逐条战报的展开状态：默认全部收起，点一下展开该场的逐武将战损明细。
+const expandedBattles = ref<Record<number, boolean>>({})
+
+const toggleBattleExpand = (battleId) => {
+    expandedBattles.value = { ...expandedBattles.value, [battleId]: !expandedBattles.value[battleId] }
+}
+
+const battleKey = (row) => {
+    // 按玩家口径：玩家 + 角色 + idu + 阵容；按队伍口径：只有阵容。
+    if (groupByPlayer.value) {
+        return `${row.player_name || ''}|${row.role || ''}|${row.idu || ''}|${row.hero1_id}_${row.hero2_id}_${row.hero3_id}`
+    }
+    return `__team__|${row.hero1_id}_${row.hero2_id}_${row.hero3_id}`
+}
+
+const resultType = (label) => {
+    if (label === '胜') return 'success'
+    if (label === '负') return 'error'
+    if (label === '平') return 'warning'
+    return 'default'
+}
+
+const roleLabel = (role) => (role === 'defend' ? '守方' : '攻方')
+
+// 兵力数字千分位，0 显示为 0（战损为 0 是有意义的信息，不能显示成 —）
+const fmtHp = (v) => Number(v || 0).toLocaleString()
+
+const openRelatedBattles = async (row) => {
+    battleRow.value = row
+    battleModalTitle.value = groupByPlayer.value
+        ? `${row.player_name || ''} · ${row.team_names || ''}`
+        : (row.team_names || '')
+    battleModalVisible.value = true
+    battleLoading.value = true
+    battleList.value = []
+    battleTotal.value = 0
+    expandedBattles.value = {}
+    try {
+        // 按队伍组合时没有单一玩家，只按阵容查（跨玩家）；按玩家时带上玩家 + 角色。
+        const playerName = groupByPlayer.value ? (row.player_name || '') : ''
+        const role = groupByPlayer.value ? (row.role || '') : ''
+        const idu = groupByPlayer.value ? (row.idu || '') : ''
+        const resp = JSON.parse(await GetPlayerTeamRelatedBattles(
+            playerName, role, idu,
+            row.hero1_id, row.hero2_id, row.hero3_id, 1, 100,
+        ))
+        if (resp.code === 200) {
+            battleList.value = resp.data.list || []
+            battleTotal.value = resp.data.total || 0
+            // 默认展开第一条，让「详细战损」一打开就能看到；其余点一下即可展开
+            if (battleList.value.length > 0) {
+                expandedBattles.value = { [battleList.value[0].battle_id]: true }
+            }
+        } else {
+            nmessage.error(resp.msg)
+        }
+    } catch (e) {
+        nmessage.error('战报加载失败: ' + e)
+    } finally {
+        battleLoading.value = false
+    }
+}
 
 const doSearch = (newPage?: number) => {
     if (typeof newPage === 'number') page.value = newPage
@@ -359,6 +429,56 @@ const playerColumns: any[] = [
         }
     },
     {
+        // 战损比 = 对方累计战损 / 我方累计战损，> 1 表示我方赚。
+        // 战损 = 伤兵 + 死兵：这一场被打掉多少兵就算多少损失，伤兵战后恢复也算本场损耗。
+        // 按玩家口径：该玩家所有队伍的战损累加后再相除。
+        // 只统计双方兵力都 > 20000 的场次（完美克制时一方可能只带几十兵，
+        // 比值会被极端放大到几百倍）。
+        title: '战损比',
+        key: 'loss_ratio',
+        width: 90,
+        align: 'center',
+        sorter: (a, b) => (a.loss_ratio || 0) - (b.loss_ratio || 0),
+        render(row) {
+            const ratio = row.loss_ratio || 0
+            if (!ratio) {
+                return h('span', { style: { color: '#bbb' } }, '—')
+            }
+            const color = ratio >= 1 ? '#18a058' : '#d03050'
+            return h('span', {
+                style: { color, fontWeight: '700' },
+                title: `战损(伤+死) 我方 ${fmtHp(row.our_lost_hp)} / 对方 ${fmtHp(row.enemy_lost_hp)}；`
+                    + `其中死兵 我方 ${fmtHp(row.our_killed_hp)} / 对方 ${fmtHp(row.enemy_killed_hp)}；`
+                    + `统计场次 ${row.loss_ratio_battles || 0}（双方兵力均 > 20000）`,
+            }, ratio.toFixed(2))
+        }
+    },
+    {
+        // 损耗率 = 我方累计战损（伤+死）/ 我方累计开战兵力（历史累计，与战损比同一批场次）。
+        // 因为分子必然 <= 分母，累计损耗率一定 <= 100%；渲染时再做一次钳制兜底。
+        // 注意：字段名必须是 destroyed_rate，不能叫 loss_rate ——
+        // loss_rate 已被「负率」(loss_count/total_battles) 占用，两者撞名会导致
+        // 损耗率列显示成负率的数值（例如负率 3.52% 被当成损耗率 352%）。
+        title: '损耗率',
+        key: 'destroyed_rate',
+        width: 90,
+        align: 'center',
+        sorter: (a, b) => (a.destroyed_rate || 0) - (b.destroyed_rate || 0),
+        render(row) {
+            const rate = Number(row.destroyed_rate || 0)
+            if (!rate) {
+                return h('span', { style: { color: '#bbb' } }, '—')
+            }
+            // 兜底钳制：比值口径上不会超过 1，真出现异常也不显示 >100%
+            const pct = Math.min(rate, 1) * 100
+            const color = pct >= 60 ? '#d03050' : pct >= 30 ? '#f59e0b' : '#18a058'
+            return h('span', {
+                style: { color, fontWeight: '700' },
+                title: `我方累计战损(伤+死) / 累计开战兵力；共 ${row.loss_ratio_battles || 0} 场（双方兵力均 > 20000）`,
+            }, pct.toFixed(1) + '%')
+        }
+    },
+    {
         title: '负率',
         key: 'loss_rate',
         width: 80,
@@ -391,6 +511,20 @@ const playerColumns: any[] = [
         key: 'idu',
         width: 100,
         ellipsis: { tooltip: true },
+    },
+    {
+        // 展开这支队伍参与过的原始战报（明细在弹窗里，避免表格横向挤出屏幕）
+        title: '操作',
+        key: 'actions',
+        width: 90,
+        fixed: 'right',
+        render(row) {
+            return h(NButton, {
+                size: 'tiny',
+                quaternary: true,
+                onClick: () => openRelatedBattles(row),
+            }, { default: () => '战报', icon: () => h(ScrollText, { size: 14 }) })
+        }
     },
 ]
 
@@ -462,6 +596,55 @@ const teamColumns: any[] = [
         }
     },
     {
+        // 战损比 = 对方累计战损 / 我方累计战损，> 1 表示我方赚。
+        // 战损 = 伤兵 + 死兵：这一场被打掉多少兵就算多少损失，伤兵战后恢复也算本场损耗。
+        // 只统计双方兵力都 > 20000 的场次（完美克制时一方可能只带几十兵，
+        // 比值会被极端放大到几百倍），且先按队伍累加再相除。
+        title: '战损比',
+        key: 'loss_ratio',
+        width: 90,
+        align: 'center',
+        sorter: (a, b) => (a.loss_ratio || 0) - (b.loss_ratio || 0),
+        render(row) {
+            const ratio = row.loss_ratio || 0
+            if (!ratio) {
+                return h('span', { style: { color: '#bbb' } }, '—')
+            }
+            const color = ratio >= 1 ? '#18a058' : '#d03050'
+            return h('span', {
+                style: { color, fontWeight: '700' },
+                title: `战损(伤+死) 我方 ${fmtHp(row.our_lost_hp)} / 对方 ${fmtHp(row.enemy_lost_hp)}；`
+                    + `其中死兵 我方 ${fmtHp(row.our_killed_hp)} / 对方 ${fmtHp(row.enemy_killed_hp)}；`
+                    + `统计场次 ${row.loss_ratio_battles || 0}（双方兵力均 > 20000）`,
+            }, ratio.toFixed(2))
+        }
+    },
+    {
+        // 损耗率 = 我方累计战损（伤+死）/ 我方累计开战兵力（历史累计，与战损比同一批场次）。
+        // 因为分子必然 <= 分母，累计损耗率一定 <= 100%；渲染时再做一次钳制兜底。
+        // 注意：字段名必须是 destroyed_rate，不能叫 loss_rate ——
+        // loss_rate 已被「负率」(loss_count/total_battles) 占用，两者撞名会导致
+        // 损耗率列显示成负率的数值（例如负率 3.52% 被当成损耗率 352%）。
+        title: '损耗率',
+        key: 'destroyed_rate',
+        width: 90,
+        align: 'center',
+        sorter: (a, b) => (a.destroyed_rate || 0) - (b.destroyed_rate || 0),
+        render(row) {
+            const rate = Number(row.destroyed_rate || 0)
+            if (!rate) {
+                return h('span', { style: { color: '#bbb' } }, '—')
+            }
+            // 兜底钳制：比值口径上不会超过 1，真出现异常也不显示 >100%
+            const pct = Math.min(rate, 1) * 100
+            const color = pct >= 60 ? '#d03050' : pct >= 30 ? '#f59e0b' : '#18a058'
+            return h('span', {
+                style: { color, fontWeight: '700' },
+                title: `我方累计战损(伤+死) / 累计开战兵力；共 ${row.loss_ratio_battles || 0} 场（双方兵力均 > 20000）`,
+            }, pct.toFixed(1) + '%')
+        }
+    },
+    {
         title: '负率',
         key: 'loss_rate',
         width: 80,
@@ -487,6 +670,20 @@ const teamColumns: any[] = [
         width: 140,
         render(row) {
             return row.formatted_time
+        }
+    },
+    {
+        // 按队伍组合口径没有单一玩家，按三武将查所有参与过该阵容的战报
+        title: '操作',
+        key: 'actions',
+        width: 90,
+        fixed: 'right',
+        render(row) {
+            return h(NButton, {
+                size: 'tiny',
+                quaternary: true,
+                onClick: () => openRelatedBattles(row),
+            }, { default: () => '战报', icon: () => h(ScrollText, { size: 14 }) })
         }
     },
 ]
@@ -574,7 +771,7 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
                         :data="tableData"
                         :bordered="false"
                         size="small"
-                        :scroll-x="groupByPlayer ? 1320 : 1220"
+                        :scroll-x="groupByPlayer ? 1410 : 1310"
                     />
                 </template>
 
@@ -590,6 +787,10 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
                             <div class="team-header">
                                 <span class="team-idu">{{ team.player_name }} · ID {{ team.idu }}</span>
                                 <span class="team-time">{{ team.formatted_time }}</span>
+                                <n-button size="tiny" quaternary @click="openRelatedBattles(team)">
+                                    <template #icon><ScrollText :size="14" /></template>
+                                    战报
+                                </n-button>
                             </div>
 
                             <div class="hero-row hero-row--big">
@@ -648,6 +849,26 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
                                     <span class="stat-value" :style="{ color: winRateColor(team.win_rate || 0), fontWeight: 700 }">{{ (team.win_rate || 0) }}%</span>
                                 </div>
                                 <div class="stat-item">
+                                    <span class="stat-label">战损比</span>
+                                    <span
+                                        class="stat-value"
+                                        :title="`战损(伤+死) 我方 ${fmtHp(team.our_lost_hp)} / 对方 ${fmtHp(team.enemy_lost_hp)}；其中死兵 我方 ${fmtHp(team.our_killed_hp)} / 对方 ${fmtHp(team.enemy_killed_hp)}；统计场次 ${team.loss_ratio_battles || 0}（双方兵力均 > 20000）`"
+                                        :style="team.loss_ratio
+                                            ? { color: team.loss_ratio >= 1 ? '#18a058' : '#d03050', fontWeight: 700 }
+                                            : { color: '#bbb' }"
+                                        >{{ team.loss_ratio ? team.loss_ratio.toFixed(2) : '—' }}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">损耗率</span>
+                                    <span
+                                        class="stat-value"
+                                        :title="`我方累计战损(伤+死) / 累计开战兵力（历史累计）`"
+                                        :style="team.destroyed_rate
+                                            ? { color: team.destroyed_rate >= 0.6 ? '#d03050' : team.destroyed_rate >= 0.3 ? '#f59e0b' : '#18a058', fontWeight: 700 }
+                                            : { color: '#bbb' }"
+                                        >{{ team.destroyed_rate ? (Math.min(team.destroyed_rate, 1) * 100).toFixed(1) + '%' : '—' }}</span>
+                                </div>
+                                <div class="stat-item">
                                     <span class="stat-label">负率</span>
                                     <span class="stat-value" :style="{ color: lossRateColor(team.loss_rate), fontWeight: 700 }">{{ team.loss_rate }}%</span>
                                 </div>
@@ -666,6 +887,10 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
                         <div class="team-header">
                             <span class="team-idu" v-if="team.players">玩家: {{ team.players }}</span>
                             <span class="team-time">{{ team.formatted_time }}</span>
+                            <n-button size="tiny" quaternary @click="openRelatedBattles(team)">
+                                <template #icon><ScrollText :size="14" /></template>
+                                战报
+                            </n-button>
                         </div>
 
                         <div class="hero-row hero-row--big">
@@ -719,6 +944,26 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
                                 <span class="stat-value" :style="{ color: winRateColor(team.win_rate || 0), fontWeight: 700 }">{{ (team.win_rate || 0) }}%</span>
                             </div>
                             <div class="stat-item">
+                                <span class="stat-label">战损比</span>
+                                <span
+                                    class="stat-value"
+                                    :title="`战损(伤+死) 我方 ${fmtHp(team.our_lost_hp)} / 对方 ${fmtHp(team.enemy_lost_hp)}；其中死兵 我方 ${fmtHp(team.our_killed_hp)} / 对方 ${fmtHp(team.enemy_killed_hp)}；统计场次 ${team.loss_ratio_battles || 0}（双方兵力均 > 20000）`"
+                                    :style="team.loss_ratio
+                                        ? { color: team.loss_ratio >= 1 ? '#18a058' : '#d03050', fontWeight: 700 }
+                                        : { color: '#bbb' }"
+                                    >{{ team.loss_ratio ? team.loss_ratio.toFixed(2) : '—' }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">损耗率</span>
+                                <span
+                                    class="stat-value"
+                                    :title="`我方累计战损(伤+死) / 累计开战兵力（历史累计）`"
+                                    :style="team.destroyed_rate
+                                        ? { color: team.destroyed_rate >= 0.6 ? '#d03050' : team.destroyed_rate >= 0.3 ? '#f59e0b' : '#18a058', fontWeight: 700 }
+                                        : { color: '#bbb' }"
+                                    >{{ team.destroyed_rate ? (Math.min(team.destroyed_rate, 1) * 100).toFixed(1) + '%' : '—' }}</span>
+                            </div>
+                            <div class="stat-item">
                                 <span class="stat-label">负率</span>
                                 <span class="stat-value" :style="{ color: lossRateColor(team.loss_rate), fontWeight: 700 }">{{ team.loss_rate }}%</span>
                             </div>
@@ -732,6 +977,98 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
 
             </div>
         </n-card>
+
+        <!-- 原始战报明细 -->
+        <n-modal v-model:show="battleModalVisible" preset="card" :title="`相关战报 · ${battleModalTitle}`" style="width: min(880px, calc(100vw - 48px))" to="body">
+            <div class="battle-modal-body">
+                <div class="battle-modal-summary">
+                    共 <strong>{{ battleTotal }}</strong> 条战报<span v-if="battleTotal > battleList.length">（显示最近 {{ battleList.length }} 条）</span>
+                </div>
+                <div class="battle-modal-note">
+                    每场战后：<b>剩余兵力 + 伤兵 + 死兵 = 开战兵力</b>。
+                    <b>战损</b> = 伤兵 + 死兵 = 开战兵力 - 剩余兵力，即这一场被打掉的全部兵力
+                    （伤兵战后能恢复，但本场确实损失了）。「战损比」= 对方战损 / 我方战损。
+                    标有 <n-tag size="tiny" type="warning" :bordered="false">未计入</n-tag>
+                    的场次因双方兵力未都超过 20000，<b>不参与</b>表格里的累计战损比与损耗率。
+                </div>
+                <div v-if="battleLoading" class="battle-loading">
+                    <n-spin size="small" />
+                    <span>加载中...</span>
+                </div>
+                <n-empty v-else-if="battleList.length === 0" description="这支队伍暂无战报" style="padding: 40px 0;" />
+                <div v-else class="battle-list">
+                    <div class="battle-item" v-for="battle in battleList" :key="battle.battle_id" @click="toggleBattleExpand(battle.battle_id)">
+                        <div class="battle-item-head">
+                            <n-tag size="tiny" :type="resultType(battle.result_label)" :bordered="false">{{ battle.result_label }}</n-tag>
+                            <n-tag size="tiny" :bordered="false">{{ roleLabel(battle.role) }}</n-tag>
+                            <span class="battle-time">{{ formatTime(battle.time) }}</span>
+                            <span class="battle-opponent">对手 {{ battle.opponent_name || '-' }}</span>
+                            <n-tag v-if="!battle.counted_in_loss_ratio" size="tiny" type="warning" :bordered="false" title="双方兵力未都超过 20000，不参与累计战损比">未计入</n-tag>
+                            <span class="battle-loss">
+                                战损(伤+死) 我 {{ battle.our_lost_hp.toLocaleString() }} : 敌 {{ battle.enemy_lost_hp.toLocaleString() }}
+                                <span class="battle-ratio" v-if="battle.loss_ratio">· 战损比 {{ battle.loss_ratio.toFixed(2) }}</span>
+                            </span>
+                            <span class="battle-expand">{{ expandedBattles[battle.battle_id] ? '收起' : '明细' }}</span>
+                        </div>
+
+                        <div v-if="expandedBattles[battle.battle_id]" class="battle-detail">
+                            <div class="battle-side" v-for="side in [
+                                { key: 'our', label: '我方（' + roleLabel(battle.role) + '）', heroes: battle.role === 'defend' ? battle.defend_heroes : battle.attack_heroes },
+                                { key: 'enemy', label: '对方', heroes: battle.role === 'defend' ? battle.attack_heroes : battle.defend_heroes },
+                            ]" :key="side.key">
+                                <div class="battle-side-title">{{ side.label }}</div>
+                                <table class="loss-table">
+                                    <thead>
+                                        <tr>
+                                            <th>武将</th>
+                                            <th>等级</th>
+                                            <th>开战兵力</th>
+                                            <th>伤兵</th>
+                                            <th>死兵（永久）</th>
+                                            <th>战损</th>
+                                            <th>剩余</th>
+                                            <th>损耗率</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="hero in side.heroes" :key="side.key + hero.hero_id">
+                                            <td class="loss-hero">{{ getHeroName(hero.hero_id) }}</td>
+                                            <td>{{ hero.level }}</td>
+                                            <td>{{ hero.total_hp.toLocaleString() }}</td>
+                                            <td class="loss-wounded">{{ hero.wounded.toLocaleString() }}</td>
+                                            <td class="loss-killed">{{ hero.killed.toLocaleString() }}</td>
+                                            <td class="loss-total">{{ hero.lost_hp.toLocaleString() }}</td>
+                                            <td>{{ hero.remain_hp.toLocaleString() }}</td>
+                                            <td :style="{ color: hero.loss_ratio >= 0.7 ? '#d03050' : hero.loss_ratio >= 0.4 ? '#f59e0b' : '#18a058', fontWeight: 600 }">
+                                                {{ (hero.loss_ratio * 100).toFixed(1) }}%
+                                            </td>
+                                        </tr>
+                                        <tr v-if="!side.heroes || side.heroes.length === 0">
+                                            <td colspan="8" class="loss-empty">无明细数据</td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot v-if="side.heroes && side.heroes.length">
+                                        <tr>
+                                            <td colspan="2" class="loss-foot-label">合计</td>
+                                            <td>{{ side.heroes.reduce((s, h) => s + h.total_hp, 0).toLocaleString() }}</td>
+                                            <td class="loss-wounded">{{ side.heroes.reduce((s, h) => s + h.wounded, 0).toLocaleString() }}</td>
+                                            <td class="loss-killed">{{ side.heroes.reduce((s, h) => s + h.killed, 0).toLocaleString() }}</td>
+                                            <td class="loss-total">{{ side.heroes.reduce((s, h) => s + h.lost_hp, 0).toLocaleString() }}</td>
+                                            <td>{{ side.heroes.reduce((s, h) => s + h.remain_hp, 0).toLocaleString() }}</td>
+                                            <td>
+                                                {{ (side.heroes.reduce((s, h) => s + h.total_hp, 0) > 0
+                                                    ? side.heroes.reduce((s, h) => s + h.lost_hp, 0) / side.heroes.reduce((s, h) => s + h.total_hp, 0) * 100
+                                                    : 0).toFixed(1) }}%
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </n-modal>
     </div>
 </template>
 
@@ -873,6 +1210,173 @@ const currentColumns = computed(() => groupByPlayer.value ? playerColumns : team
     margin-left: auto;
     font-size: 12px;
     color: var(--color-text-secondary);
+}
+
+.battle-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.battle-modal-summary {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.battle-modal-note {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 8px;
+    padding: 8px 12px;
+
+    b {
+        color: var(--color-text);
+    }
+}
+
+.battle-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 40px 0;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.battle-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.battle-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--color-bg);
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.battle-item-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.battle-loss {
+    margin-left: auto;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.battle-ratio {
+    color: var(--color-text-secondary);
+}
+
+.battle-expand {
+    color: #2080f0;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.battle-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 8px 0 4px;
+    border-top: 1px dashed var(--color-border);
+    cursor: default;
+}
+
+.battle-side-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: 6px;
+}
+
+.loss-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+
+    th,
+    td {
+        padding: 4px 8px;
+        text-align: right;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    th {
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+        text-align: left;
+    }
+}
+
+.loss-hero {
+    color: var(--color-text);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.loss-remain {
+    color: #18a058;
+}
+
+.loss-wounded {
+    color: #f59e0b;
+}
+
+.loss-killed {
+    color: #d03050;
+}
+
+.loss-total {
+    color: #d03050;
+    font-weight: 700;
+}
+
+.loss-foot-label {
+    text-align: right;
+    color: var(--color-text-secondary);
+    font-weight: 600;
+}
+
+.loss-empty {
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+.battle-time {
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.battle-opponent {
+    color: var(--color-text);
+}
+
+.battle-hp {
+    margin-left: auto;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
 }
 
 .hero-row {
